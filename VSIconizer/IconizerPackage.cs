@@ -8,11 +8,12 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
-using Microsoft.VisualStudio.Platform.WindowManagement;
+using Microsoft.VisualStudio.PlatformUI.Shell;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using NotLimited.Framework.Wpf;
@@ -29,6 +30,7 @@ namespace VSIconizer
 		private EnvDTE.DTE _dte;
 		private EnvDTE.DTEEvents _events;
 		private Window _window;
+		private Timer _timer = null;
 
 		protected override void Initialize()
 		{
@@ -40,28 +42,35 @@ namespace VSIconizer
 			_events.OnStartupComplete += () =>
 			{
 				_window = (Window)HwndSource.FromHwnd(new IntPtr(_dte.MainWindow.HWnd)).RootVisual;
-				CommandManager.AddPreviewExecutedHandler(_window, OnPreviewCommandExecuted);
+				//CommandManager.AddPreviewExecutedHandler(_window, OnPreviewCommandExecuted);
+				DockOperations.DockPositionChanged += (sender, args) =>
+				{
+					if (_timer == null)
+					{
+						_timer = new Timer(state => _window.Dispatcher.Invoke(ShowIcons), null, 1000, Timeout.Infinite);
+					}
+				};
 				ShowIcons();
 			};
 		}
 
-		private void OnPreviewCommandExecuted(object sender, ExecutedRoutedEventArgs e)
-		{
-			var routedCommand = e.Command as RoutedCommand;
-			if (routedCommand == null || !string.Equals(routedCommand.Name, "AutoHideView"))
-			{
-				return;
-			}
+		//private void OnPreviewCommandExecuted(object sender, ExecutedRoutedEventArgs e)
+		//{
+		//	var routedCommand = e.Command as RoutedCommand;
+		//	if (routedCommand == null || !string.Equals(routedCommand.Name, "AutoHideView"))
+		//	{
+		//		return;
+		//	}
 
-			var view = e.Parameter as ToolWindowView;
+		//	var view = e.Parameter as ToolWindowView;
 
-			if (view != null)
-			{
+		//	if (view != null)
+		//	{
 				
-				view.Hidden += Handler;
-				view.Shown += Handler;
-			}
-		}
+		//		view.Hidden += Handler;
+		//		view.Shown += Handler;
+		//	}
+		//}
 
 		private void Handler(object sender, EventArgs eventArgs)
 		{
@@ -71,6 +80,12 @@ namespace VSIconizer
 
 		private void ShowIcons()
 		{
+			if (_timer != null)
+			{
+				_timer.Dispose();
+				_timer = null;
+			}
+
 			var grids = (from descendant in _window.GetVisualDescendants()
 						let name = descendant.GetType().Name
 						where name == "AutoHideTabItem" || name == "DragUndockHeader"
@@ -82,18 +97,21 @@ namespace VSIconizer
 
 			foreach (var grid in grids)
 			{
+				var image = (Image)grid.Children[0];
+				if (image.Source == null)
+				{
+					continue;
+				}
+
+				image.Visibility = Visibility.Visible;
+				image.Margin = new Thickness(10, 5, 10, 5);
+
+				grid.Children[1].Visibility = Visibility.Collapsed;
+
 				if (grid.ColumnDefinitions.Count == 0)
 				{
 					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-				}
-
-				for (int i = 0; i < grid.Children.Count; i++)
-				{
-					var child = (FrameworkElement)grid.Children[i];
-					child.SetValue(Grid.ColumnProperty, i);
-					child.Visibility = Visibility.Visible;
-					child.Margin = new Thickness(2, 0, 2, 0);
 				}
 			}
 		}
