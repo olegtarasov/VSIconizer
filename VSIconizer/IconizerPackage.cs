@@ -5,15 +5,12 @@
 //------------------------------------------------------------------------------
 
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Interop;
-using Microsoft.VisualStudio.PlatformUI.Shell;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using NotLimited.Framework.Wpf;
@@ -27,6 +24,9 @@ namespace VSIconizer
 	[ProvideAutoLoad(UIContextGuids80.NoSolution)]
 	public sealed class IconizerPackage : Package
 	{
+		private static readonly Type _imageType = typeof(Image);
+		private static readonly Type _textBlock = typeof(TextBlock);
+
 		private EnvDTE.DTE _dte;
 		private EnvDTE.DTEEvents _events;
 		private Window _window;
@@ -42,56 +42,23 @@ namespace VSIconizer
 			_events.OnStartupComplete += () =>
 			{
 				_window = (Window)HwndSource.FromHwnd(new IntPtr(_dte.MainWindow.HWnd)).RootVisual;
-				//CommandManager.AddPreviewExecutedHandler(_window, OnPreviewCommandExecuted);
-				DockOperations.DockPositionChanged += (sender, args) =>
-				{
-					if (_timer == null)
-					{
-						_timer = new Timer(state => _window.Dispatcher.Invoke(ShowIcons), null, 1000, Timeout.Infinite);
-					}
-				};
-				ShowIcons();
+				_timer = new Timer(state => _window.Dispatcher.Invoke(ShowIcons), null, 2000, 2000);
+			};
+
+			_events.OnBeginShutdown += () =>
+			{
+				_timer.Dispose();
 			};
 		}
 
-		//private void OnPreviewCommandExecuted(object sender, ExecutedRoutedEventArgs e)
-		//{
-		//	var routedCommand = e.Command as RoutedCommand;
-		//	if (routedCommand == null || !string.Equals(routedCommand.Name, "AutoHideView"))
-		//	{
-		//		return;
-		//	}
-
-		//	var view = e.Parameter as ToolWindowView;
-
-		//	if (view != null)
-		//	{
-				
-		//		view.Hidden += Handler;
-		//		view.Shown += Handler;
-		//	}
-		//}
-
-		private void Handler(object sender, EventArgs eventArgs)
-		{
-			ShowIcons();
-		}
-
-
 		private void ShowIcons()
 		{
-			if (_timer != null)
-			{
-				_timer.Dispose();
-				_timer = null;
-			}
-
 			var grids = (from descendant in _window.GetVisualDescendants()
-						let name = descendant.GetType().Name
-						where name == "AutoHideTabItem" || name == "DragUndockHeader"
-						let grid = descendant.GetVisualDescendants().OfType<Grid>().FirstOrDefault()
-						where grid != null && IsTargetGrid(grid)
-						select grid)
+						 let name = descendant.GetType().Name
+						 where name == "AutoHideTabItem" || name == "DragUndockHeader"
+						 let grid = descendant.GetVisualDescendants().OfType<Grid>().FirstOrDefault()
+						 where grid != null && IsTargetGrid(grid)
+						 select grid)
 				.ToList();
 
 
@@ -118,7 +85,7 @@ namespace VSIconizer
 
 		private bool IsTargetGrid(Grid grid)
 		{
-			return grid.Children.Count == 2 && grid.Children[0].GetType().Name == "CrispImage" && grid.Children[1].GetType().Name == "TextBlock";
+			return grid.Children.Count == 2 && _imageType.IsInstanceOfType(grid.Children[0]) && _textBlock.IsInstanceOfType(grid.Children[1]);
 		}
 	}
 }
