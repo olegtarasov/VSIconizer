@@ -5,12 +5,15 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Media;
+using Microsoft.VisualStudio.PlatformUI.Shell.Controls;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using NotLimited.Framework.Wpf;
@@ -53,33 +56,62 @@ namespace VSIconizer
 
 		private void ShowIcons()
 		{
-			var grids = (from descendant in _window.GetVisualDescendants()
-						 let name = descendant.GetType().Name
-						 where name == "AutoHideTabItem" || name == "DragUndockHeader"
-						 let grid = descendant.GetVisualDescendants().OfType<Grid>().FirstOrDefault()
-						 where grid != null && IsTargetGrid(grid)
-						 select grid)
-				.ToList();
-
-
-			foreach (var grid in grids)
+			foreach (var descendant in _window.GetVisualDescendants())
 			{
-				var image = (Image)grid.Children[0];
-				if (image.Source == null)
+				var channel = descendant as AutoHideChannelControl;
+				if (channel != null)
 				{
+					ProcessHiddenChannel(channel);
 					continue;
 				}
 
-				image.Visibility = Visibility.Visible;
-				image.Margin = new Thickness(10, 5, 10, 5);
-
-				grid.Children[1].Visibility = Visibility.Collapsed;
-
-				if (grid.ColumnDefinitions.Count == 0)
+				var unlockHeader = descendant as DragUndockHeader;
+				if (unlockHeader != null)
 				{
-					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+					foreach (var grid in unlockHeader.GetVisualDescendants().OfType<Grid>().Where(IsTargetGrid))
+					{
+						ProcessGrid(grid, null);
+					}
 				}
+			}
+		}
+
+		private void ProcessHiddenChannel(AutoHideChannelControl control)
+		{
+			var orientation = AutoHideChannelControl.GetOrientation(control);
+			Transform transform = null;
+
+			if (orientation == Orientation.Vertical)
+			{
+				transform = new RotateTransform(-90);
+			}
+
+			foreach (var grid in control.GetVisualDescendants().OfType<Grid>().Where(IsTargetGrid))
+			{
+				ProcessGrid(grid, transform);
+			}
+		}
+
+		private void ProcessGrid(Grid grid, Transform transform)
+		{
+			var image = (Image)grid.Children[0];
+			if (image.Source == null)
+			{
+				return;
+			}
+
+			var textBlock = (TextBlock)grid.Children[1];
+			image.Visibility = Visibility.Visible;
+			image.Margin = new Thickness(10, 5, 10, 5);
+			image.LayoutTransform = transform;
+			grid.ToolTip = textBlock.Text;
+
+			textBlock.Visibility = Visibility.Collapsed;
+
+			if (grid.ColumnDefinitions.Count == 0)
+			{
+				grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+				grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 			}
 		}
 
