@@ -105,6 +105,7 @@ namespace VSIconizer
 			image.Margin = new Thickness(10, 5, 10, 5);
 			image.LayoutTransform = transform;
 			grid.ToolTip = textBlock.Text;
+			grid.Background = Brushes.Transparent;
 
 			textBlock.Visibility = Visibility.Collapsed;
 
