@@ -6,6 +6,7 @@ Nuget/Packages/*/*.nupkg
 Marti.Workflow.Vs.Tests/TestSolution.zip
 Setup/Payloads/
 out/
+.vs/
 
 # User-specific files
 *.suo

@@ -5,7 +5,6 @@
 //------------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -30,6 +29,8 @@ namespace VSIconizer
 		private static readonly Type _imageType = typeof(Image);
 		private static readonly Type _textBlock = typeof(TextBlock);
 
+		private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1);
+
 		private EnvDTE.DTE _dte;
 		private EnvDTE.DTEEvents _events;
 		private Window _window;
@@ -45,13 +46,26 @@ namespace VSIconizer
 			_events.OnStartupComplete += () =>
 			{
 				_window = (Window)HwndSource.FromHwnd(new IntPtr(_dte.MainWindow.HWnd)).RootVisual;
-				_timer = new Timer(state => _window.Dispatcher.Invoke(ShowIcons), null, 2000, 2000);
+				_timer = new Timer(Callback, null, 2000, 2000);
 			};
 
 			_events.OnBeginShutdown += () =>
 			{
+				_semaphore.Wait();
 				_timer.Dispose();
+				_timer = null;
+				_semaphore.Release();
 			};
+		}
+
+		private void Callback(object state)
+		{
+			_semaphore.Wait();
+			if (_timer != null)
+			{
+				_window.Dispatcher.Invoke(ShowIcons);
+			}
+			_semaphore.Release();
 		}
 
 		private void ShowIcons()
