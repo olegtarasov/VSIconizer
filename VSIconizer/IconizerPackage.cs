@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -12,6 +13,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Microsoft.VisualStudio.PlatformUI.Shell.Controls;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -26,15 +28,22 @@ namespace VSIconizer
 	[ProvideAutoLoad(UIContextGuids80.NoSolution)]
 	public sealed class IconizerPackage : Package
 	{
+		private delegate bool EnumThreadDelegate(IntPtr hWnd, IntPtr lParam);
+
+		[DllImport("user32.dll")]
+		private static extern bool EnumThreadWindows(uint dwThreadId, EnumThreadDelegate lpfn, IntPtr lParam);
+
+		[DllImport("kernel32.dll")]
+		private static extern uint GetCurrentThreadId();
+
 		private static readonly Type _imageType = typeof(Image);
 		private static readonly Type _textBlock = typeof(TextBlock);
 
-		private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1);
-
 		private EnvDTE.DTE _dte;
 		private EnvDTE.DTEEvents _events;
-		private Window _window;
 		private Timer _timer = null;
+		private uint _threadId;
+		private Dispatcher _dispatcher;
 
 		protected override void Initialize()
 		{
@@ -45,32 +54,45 @@ namespace VSIconizer
 
 			_events.OnStartupComplete += () =>
 			{
-				_window = (Window)HwndSource.FromHwnd(new IntPtr(_dte.MainWindow.HWnd)).RootVisual;
-				_timer = new Timer(Callback, null, 2000, 2000);
+				_threadId = GetCurrentThreadId();
+				_dispatcher = Dispatcher.CurrentDispatcher;
+				_timer = new Timer(TimerCallback, null, 2000, 2000);
 			};
 
 			_events.OnBeginShutdown += () =>
 			{
-				_semaphore.Wait();
 				_timer.Dispose();
 				_timer = null;
-				_semaphore.Release();
 			};
 		}
 
-		private void Callback(object state)
+		private void TimerCallback(object state)
 		{
-			_semaphore.Wait();
 			if (_timer != null)
 			{
-				_window.Dispatcher.Invoke(ShowIcons);
+				EnumThreadWindows(_threadId, EnumCallback, IntPtr.Zero);
 			}
-			_semaphore.Release();
 		}
 
-		private void ShowIcons()
+		private bool EnumCallback(IntPtr hWnd, IntPtr lParam)
 		{
-			foreach (var descendant in _window.GetVisualDescendants())
+			var window = HwndSource.FromHwnd(hWnd)?.RootVisual as Window;
+			if (window != null && _timer != null)
+			{
+				_dispatcher.Invoke(() => ShowIcons(window));
+			}
+
+			return true;
+		}
+
+		private void ShowIcons(Window window)
+		{
+			if (_timer == null)
+			{
+				return;
+			}
+
+			foreach (var descendant in window.GetVisualDescendants())
 			{
 				var channel = descendant as AutoHideChannelControl;
 				if (channel != null)
@@ -100,6 +122,11 @@ namespace VSIconizer
 				transform = new RotateTransform(-90);
 			}
 
+			if (_timer == null)
+			{
+				return;
+			}
+
 			foreach (var grid in control.GetVisualDescendants().OfType<Grid>().Where(IsTargetGrid))
 			{
 				ProcessGrid(grid, transform);
@@ -122,6 +149,11 @@ namespace VSIconizer
 			grid.Background = Brushes.Transparent;
 
 			textBlock.Visibility = Visibility.Collapsed;
+
+			if (_timer == null)
+			{
+				return;
+			}
 
 			if (grid.ColumnDefinitions.Count == 0)
 			{
