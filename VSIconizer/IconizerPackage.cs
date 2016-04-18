@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
@@ -79,7 +80,13 @@ namespace VSIconizer
 			var window = HwndSource.FromHwnd(hWnd)?.RootVisual as Window;
 			if (window != null && _timer != null)
 			{
-				_dispatcher.Invoke(() => ShowIcons(window));
+				try
+				{
+					_dispatcher.Invoke(() => ShowIcons(window));
+				}
+				catch (TaskCanceledException)
+				{
+				}
 			}
 
 			return true;
