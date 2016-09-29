@@ -46,8 +46,7 @@ namespace VsIconizer.Core
             var ass = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(x => x?.FullName.StartsWith("Microsoft.VisualStudio.Shell.ViewManager") == true);
             var type = ass.GetType("Microsoft.VisualStudio.PlatformUI.Shell.Controls.AutoHideChannelControl");
             _getOrientation = type.GetMethod("GetOrientation", BindingFlags.Static | BindingFlags.Public);
-
-
+            
             _dte = dte;
             _events = _dte.Events.DTEEvents;
 
