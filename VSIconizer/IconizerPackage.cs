@@ -34,5 +34,11 @@ namespace VSIconizer
                 obj => obj is AutoHideChannelControl,
                 obj => obj is DragUndockHeader);
         }
+
+        protected override int QueryClose(out bool canClose)
+        {
+            _iconizerService.Shutdown();
+            return base.QueryClose(out canClose);
+        }
     }
 }

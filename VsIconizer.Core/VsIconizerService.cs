@@ -50,18 +50,23 @@ namespace VsIconizer.Core
             _dte = dte;
             _events = _dte.Events.DTEEvents;
 
-            _events.OnStartupComplete += () =>
-            {
+            //_events.OnStartupComplete += () =>
+            //{
                 _threadId = GetCurrentThreadId();
                 _dispatcher = Dispatcher.CurrentDispatcher;
                 _timer = new Timer(TimerCallback, null, 2000, 2000);
-            };
+            //};
 
-            _events.OnBeginShutdown += () =>
-            {
-                _timer.Dispose();
-                _timer = null;
-            };
+            //_events.OnBeginShutdown += () =>
+            //{
+            
+            //};
+        }
+
+        public void Shutdown()
+        {
+            _timer.Dispose();
+            _timer = null;
         }
 
         private void TimerCallback(object state)
