@@ -38,10 +38,13 @@ namespace VsIconizer.Core
         private readonly Func<DependencyObject, bool> _isDragUnlockHeader;
         private readonly MethodInfo _getOrientation;
 
-        public VsIconizerService(DTE dte, Func<DependencyObject, bool> isAutohideControl, Func<DependencyObject, bool> isDragUnlockHeader)
+        public Thickness IconMargin { get; set; }
+
+        public VsIconizerService(DTE dte, Func<DependencyObject, bool> isAutohideControl, Func<DependencyObject, bool> isDragUnlockHeader, Thickness margin)
         {
             _isAutohideControl = isAutohideControl;
             _isDragUnlockHeader = isDragUnlockHeader;
+            IconMargin = margin;
 
             var ass = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(x => x?.FullName.StartsWith("Microsoft.VisualStudio.Shell.ViewManager") == true);
             var type = ass.GetType("Microsoft.VisualStudio.PlatformUI.Shell.Controls.AutoHideChannelControl");
@@ -149,7 +152,7 @@ namespace VsIconizer.Core
 
             var textBlock = (TextBlock)grid.Children[1];
             image.Visibility = Visibility.Visible;
-            image.Margin = new Thickness(10, 5, 10, 5);
+            image.Margin = IconMargin;
             image.LayoutTransform = transform;
             grid.ToolTip = textBlock.Text;
             grid.Background = Brushes.Transparent;

@@ -53,8 +53,18 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DeployExtension>False</DeployExtension>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="IconizerOptionPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="IconizerOptionsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IconizerOptionsControl.Designer.cs">
+      <DependentUpon>IconizerOptionsControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="IconizerPackage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -193,6 +203,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="IconizerOptionsControl.resx">
+      <DependentUpon>IconizerOptionsControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>
