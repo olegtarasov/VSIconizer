@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="376102e5-d394-4f6b-b994-145fa911c278" Version="1.21" Language="en-US" Publisher="Oleg Tarasov" />
+        <Identity Id="376102e5-d394-4f6b-b994-145fa911c278" Version="1.22" Language="en-US" Publisher="Oleg Tarasov" />
         <DisplayName>Visual Studio Iconizer</DisplayName>
         <Description xml:space="preserve">This extension converts text titles on Visual Studio tool windows to icons.</Description>
         <Icon>Resources\icon.jpg</Icon>

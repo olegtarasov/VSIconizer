@@ -6,7 +6,6 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
-using Microsoft.VisualStudio.PlatformUI.Shell.Controls;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Win32;
@@ -31,8 +30,8 @@ namespace VSIconizer
 
             _iconizerService = new VsIconizerService(
                 (EnvDTE.DTE)GetService(typeof(EnvDTE.DTE)),
-                obj => obj is AutoHideChannelControl,
-                obj => obj is DragUndockHeader);
+                obj => obj.GetType().Name == "AutoHideChannelControl",
+                obj => obj.GetType().Name == "DragUndockHeader");
         }
 
         protected override int QueryClose(out bool canClose)
