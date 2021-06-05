@@ -13,9 +13,11 @@ namespace VSIconizer
 
         public int? VerticalMargin { get; set; }
         public int? HorizontalMargin { get; set; }
+        public bool? ShowText { get; set; }
 
         public int NewVerticalMargin { get; set; }
         public int NewHorizontalMargin { get; set; }
+        public bool NewShowText { get; set; }
 
         public event EventHandler OptionsUpdated;
 
@@ -27,6 +29,7 @@ namespace VSIconizer
             {
                 VerticalMargin = NewVerticalMargin;
                 HorizontalMargin = NewHorizontalMargin;
+                ShowText = NewShowText;
                 OnOptionsUpdated();
             }
             SaveSettingsToStorage();
@@ -42,6 +45,7 @@ namespace VSIconizer
         {
             NewHorizontalMargin = HorizontalMargin.Value;
             NewVerticalMargin = VerticalMargin.Value;
+            NewShowText = ShowText.Value;
             SaveSettingsToStorage();
         }
 
