@@ -155,13 +155,20 @@ namespace VsIconizer.Core
 
             var textBlock = (TextBlock)grid.Children[1];
             image.Visibility = Visibility.Visible;
-            image.Margin = IconMargin;
             image.LayoutTransform = transform;
             grid.Background = Brushes.Transparent;
 
-            if (!ShowText)
+            if (ShowText)
+            {
+                textBlock.Visibility = Visibility.Visible;
+                textBlock.Margin = new Thickness(0, IconMargin.Top, IconMargin.Right, IconMargin.Bottom);
+                image.Margin = new Thickness(IconMargin.Left, IconMargin.Top, IconMargin.Right / 2, IconMargin.Bottom);
+                grid.ToolTip = null;
+            }
+            else
             {
                 textBlock.Visibility = Visibility.Collapsed;
+                image.Margin = IconMargin;
                 grid.ToolTip = textBlock.Text;
             }
 
