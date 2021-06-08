@@ -35,6 +35,8 @@ namespace VSIconizer
                 options.HorizontalMargin = 10;
             if (options.VerticalMargin == null)
                 options.VerticalMargin = 5;
+            if (options.ShowText == null)
+                options.ShowText = false;
 
             options.OptionsUpdated += OnOptionsUpdated;
 
@@ -42,14 +44,18 @@ namespace VSIconizer
                 (EnvDTE.DTE)GetService(typeof(EnvDTE.DTE)),
                 obj => obj.GetType().Name == "AutoHideChannelControl",
                 obj => obj.GetType().Name == "DragUndockHeader",
-                new Thickness(options.HorizontalMargin.Value, options.VerticalMargin.Value, options.HorizontalMargin.Value, options.VerticalMargin.Value));
+                new Thickness(options.HorizontalMargin.Value, options.VerticalMargin.Value, options.HorizontalMargin.Value, options.VerticalMargin.Value),
+                options.ShowText.Value);
         }
 
         private void OnOptionsUpdated(object sender, EventArgs e)
         {
             var options = (IconizerOptionPage)sender;
             if (_iconizerService != null)
+            {
                 _iconizerService.IconMargin = new Thickness(options.HorizontalMargin.Value, options.VerticalMargin.Value, options.HorizontalMargin.Value, options.VerticalMargin.Value);
+                _iconizerService.ShowText = options.ShowText.Value;
+            }
         }
 
         protected override int QueryClose(out bool canClose)

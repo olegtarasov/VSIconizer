@@ -39,30 +39,33 @@ namespace VsIconizer.Core
         private readonly MethodInfo _getOrientation;
 
         public Thickness IconMargin { get; set; }
+        public bool ShowText { get; set; }
 
-        public VsIconizerService(DTE dte, Func<DependencyObject, bool> isAutohideControl, Func<DependencyObject, bool> isDragUnlockHeader, Thickness margin)
+        public VsIconizerService(DTE dte, Func<DependencyObject, bool> isAutohideControl, Func<DependencyObject, bool> isDragUnlockHeader, Thickness margin, bool showText)
         {
             _isAutohideControl = isAutohideControl;
             _isDragUnlockHeader = isDragUnlockHeader;
             IconMargin = margin;
+            ShowText = showText;
 
             var ass = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(x => x?.FullName.StartsWith("Microsoft.VisualStudio.Shell.ViewManager") == true);
             var type = ass.GetType("Microsoft.VisualStudio.PlatformUI.Shell.Controls.AutoHideChannelControl");
             _getOrientation = type.GetMethod("GetOrientation", BindingFlags.Static | BindingFlags.Public);
-            
+
             _dte = dte;
             _events = _dte.Events.DTEEvents;
 
             //_events.OnStartupComplete += () =>
             //{
-                _threadId = GetCurrentThreadId();
-                _dispatcher = Dispatcher.CurrentDispatcher;
-                _timer = new Timer(TimerCallback, null, 2000, 2000);
+            _threadId = GetCurrentThreadId();
+            _dispatcher = Dispatcher.CurrentDispatcher;
+            _timer = new Timer(TimerCallback, null, 2000, 2000);
+            ShowText = showText;
             //};
 
             //_events.OnBeginShutdown += () =>
             //{
-            
+
             //};
         }
 
@@ -111,7 +114,7 @@ namespace VsIconizer.Core
                     ProcessHiddenChannel(descendant);
                     continue;
                 }
-                
+
                 if (_isDragUnlockHeader(descendant))
                 {
                     foreach (var grid in descendant.GetVisualDescendants().OfType<Grid>().Where(IsTargetGrid))
@@ -126,7 +129,7 @@ namespace VsIconizer.Core
         {
             Transform transform = null;
 
-            if ((int)_getOrientation.Invoke(null, new []{control}) == 1)
+            if ((int)_getOrientation.Invoke(null, new[] { control }) == 1)
             {
                 transform = new RotateTransform(-90);
             }
@@ -152,12 +155,22 @@ namespace VsIconizer.Core
 
             var textBlock = (TextBlock)grid.Children[1];
             image.Visibility = Visibility.Visible;
-            image.Margin = IconMargin;
             image.LayoutTransform = transform;
-            grid.ToolTip = textBlock.Text;
             grid.Background = Brushes.Transparent;
 
-            textBlock.Visibility = Visibility.Collapsed;
+            if (ShowText)
+            {
+                textBlock.Visibility = Visibility.Visible;
+                textBlock.Margin = new Thickness(0, IconMargin.Top, IconMargin.Right, IconMargin.Bottom);
+                image.Margin = new Thickness(IconMargin.Left, IconMargin.Top, IconMargin.Right / 2, IconMargin.Bottom);
+                grid.ToolTip = null;
+            }
+            else
+            {
+                textBlock.Visibility = Visibility.Collapsed;
+                image.Margin = IconMargin;
+                grid.ToolTip = textBlock.Text;
+            }
 
             if (_timer == null)
             {
@@ -167,7 +180,9 @@ namespace VsIconizer.Core
             if (grid.ColumnDefinitions.Count == 0)
             {
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                image.SetValue(Grid.ColumnProperty, 0);
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                textBlock.SetValue(Grid.ColumnProperty, 1);
             }
         }
 
