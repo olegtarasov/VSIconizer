@@ -1,15 +1,11 @@
-﻿using System;
-using System.ComponentModel.Design;
-using System.Diagnostics;
+﻿using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+
+using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.OLE.Interop;
-using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.Win32;
+
 using VsIconizer.Core;
 
 namespace VSIconizer
@@ -19,7 +15,15 @@ namespace VSIconizer
     [Guid(IconizerPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
-    [ProvideOptionPage(typeof(IconizerOptionPage), "Environment", "Iconizer", 0, 0, true)]
+    [ProvideOptionPage(
+        pageType: typeof(IconizerOptionPage),
+        categoryName: "Environment",
+        pageName: "Iconizer",
+        categoryResourceID: 0,
+        pageNameResourceID: 0,
+        supportsAutomation: true,
+        keywords: new[] { "tabs", "tab", "window", "windows", "icon", "icons", "tools", "ui", "iconizer", "iconz" }
+    )]
     public sealed class IconizerPackage : Package
     {
         public const string PackageGuidString = "376102e5-d394-4f6b-b994-145fa911c278";
