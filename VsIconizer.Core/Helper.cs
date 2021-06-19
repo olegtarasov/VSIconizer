@@ -3,7 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 
-namespace VsIconizer.Core
+namespace VSIconizer.Core
 {
     public static class Helper
     {

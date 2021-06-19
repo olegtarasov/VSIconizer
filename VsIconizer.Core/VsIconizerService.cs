@@ -12,7 +12,7 @@ using System.Windows.Threading;
 using EnvDTE;
 using Window = System.Windows.Window;
 
-namespace VsIconizer.Core
+namespace VSIconizer.Core
 {
     public class VsIconizerService
     {
