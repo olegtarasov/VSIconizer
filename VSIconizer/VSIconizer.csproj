@@ -66,6 +66,7 @@
     </Compile>
     <Compile Include="IconizerPackage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VSIconizerModeComboBoxItem.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -127,9 +128,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\VsIconizer.Core\VsIconizer.Core.csproj">
+    <ProjectReference Include="..\VsIconizer.Core\VSIconizer.Core.csproj">
       <Project>{8318e1b4-77c1-48a2-957c-5205bade0ad4}</Project>
-      <Name>VsIconizer.Core</Name>
+      <Name>VSIconizer.Core</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>

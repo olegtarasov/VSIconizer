@@ -1,9 +1,8 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31410.357
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VsIconizer.Core", "VsIconizer.Core\VsIconizer.Core.csproj", "{8318E1B4-77C1-48A2-957C-5205BADE0AD4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSIconizer.Core", "VsIconizer.Core\VSIconizer.Core.csproj", "{8318E1B4-77C1-48A2-957C-5205BADE0AD4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSIconizer", "VSIconizer\VSIconizer.csproj", "{171A544F-CAD4-46FF-8966-F28800CCA821}"
 EndProject

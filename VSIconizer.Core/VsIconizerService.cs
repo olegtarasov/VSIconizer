@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -9,90 +8,112 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using EnvDTE;
+
+//using EnvDTE;
+
 using Window = System.Windows.Window;
 
 namespace VSIconizer.Core
 {
-    public class VsIconizerService
+    public class VSIconizerService
     {
-        private delegate bool EnumThreadDelegate(IntPtr hWnd, IntPtr lParam);
+//      private readonly DTE             dte;
+//      private readonly DTEEvents       events;
+        private readonly DispatcherTimer timer;
+        private readonly uint            threadId;
+        private readonly Dispatcher      dispatcher;
 
-        [DllImport("user32.dll")]
-        private static extern bool EnumThreadWindows(uint dwThreadId, EnumThreadDelegate lpfn, IntPtr lParam);
+        private readonly IVSControlMethods vsMethods;
 
-        [DllImport("kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
+        private VSIconizerConfiguration cfg;
 
-        private static readonly Type _imageType = typeof(Image);
-        private static readonly Type _textBlock = typeof(TextBlock);
+        // Mutable precomputed margins and values:
+        private Thickness  gridMargin;
+        private Thickness? iconHorizontal;
+        private Thickness? iconVertical;
+        private Visibility iconVisibility;
+        private Visibility textVisibility;
 
-
-        private readonly DTE _dte;
-        private DTEEvents _events;
-        private Timer _timer = null;
-        private uint _threadId;
-        private Dispatcher _dispatcher;
-
-        private readonly Func<DependencyObject, bool> _isAutohideControl;
-        private readonly Func<DependencyObject, bool> _isDragUnlockHeader;
-        private readonly MethodInfo _getOrientation;
-
-        public Thickness IconMargin { get; set; }
-        public bool ShowText { get; set; }
-
-        public VsIconizerService(DTE dte, Func<DependencyObject, bool> isAutohideControl, Func<DependencyObject, bool> isDragUnlockHeader, Thickness margin, bool showText)
+        public VSIconizerService(
+//          DTE                     dte,
+//          DTEEvents               events,
+            IVSControlMethods       vsMethods,
+            VSIconizerConfiguration currentCfg
+        )
         {
-            _isAutohideControl = isAutohideControl;
-            _isDragUnlockHeader = isDragUnlockHeader;
-            IconMargin = margin;
-            ShowText = showText;
+            this.vsMethods = vsMethods  ?? throw new ArgumentNullException(nameof(vsMethods));
+            this.cfg       = currentCfg ?? throw new ArgumentNullException(nameof(currentCfg));
 
-            var ass = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(x => x?.FullName.StartsWith("Microsoft.VisualStudio.Shell.ViewManager") == true);
-            var type = ass.GetType("Microsoft.VisualStudio.PlatformUI.Shell.Controls.AutoHideChannelControl");
-            _getOrientation = type.GetMethod("GetOrientation", BindingFlags.Static | BindingFlags.Public);
+//          events.OnStartupComplete += () =>
+            {
+                this.threadId   = NativeMethods.GetCurrentThreadId();
+                this.dispatcher = Dispatcher.CurrentDispatcher;
+                this.timer      = new DispatcherTimer(DispatcherPriority.DataBind, this.dispatcher);
+                
+                this.timer.Interval = TimeSpan.FromSeconds(2);
+                this.timer.Tick += this.Timer_Tick;
 
-            _dte = dte;
-            _events = _dte.Events.DTEEvents;
+                this.ApplyConfiguration(currentCfg);
 
-            //_events.OnStartupComplete += () =>
-            //{
-            _threadId = GetCurrentThreadId();
-            _dispatcher = Dispatcher.CurrentDispatcher;
-            _timer = new Timer(TimerCallback, null, 2000, 2000);
-            ShowText = showText;
-            //};
+                this.timer.Start();
+            };
 
-            //_events.OnBeginShutdown += () =>
-            //{
+//          events.OnBeginShutdown += () =>
+            {
 
-            //};
+            };
+        }
+
+        public void ApplyConfiguration(VSIconizerConfiguration cfg)
+        {
+            this.cfg = cfg ?? throw new ArgumentNullException(nameof(cfg));
+
+            this.gridMargin = new Thickness(
+                left  : cfg.HorizontalSpacing,
+                top   : cfg.VerticalSpacing,
+                right : cfg.HorizontalSpacing,
+                bottom: cfg.VerticalSpacing
+            );
+
+            this.iconVisibility = cfg.Mode.ShowIcon() ? Visibility.Visible : Visibility.Collapsed;
+            this.textVisibility = cfg.Mode.ShowText() ? Visibility.Visible : Visibility.Collapsed;
+
+            if (cfg.Mode == VSIconizerMode.IconAndText)
+            {
+                this.iconHorizontal = new Thickness(left: 0, top: 0, right: cfg.IconTextSpacing, bottom:                   0);
+                this.iconVertical   = new Thickness(left: 0, top: 0, right:                   0, bottom: cfg.IconTextSpacing);
+            }
+            else
+            {
+                this.iconHorizontal = null;
+                this.iconVertical   = null;
+            }
+
+            //
+
+            // Apply settings immediately, don't wait up-to 2s for the timer:
+            this.Timer_Tick(sender: null, e: EventArgs.Empty);
         }
 
         public void Shutdown()
         {
-            _timer.Dispose();
-            _timer = null;
+            this.timer.Stop();
         }
 
-        private void TimerCallback(object state)
+        private void Timer_Tick(object sender, EventArgs e)
         {
-            if (_timer != null)
-            {
-                EnumThreadWindows(_threadId, EnumCallback, IntPtr.Zero);
-            }
+            _ = NativeMethods.EnumThreadWindows(dwThreadId: this.threadId, lpfn: this.EnumCallback, lParam: IntPtr.Zero);
         }
 
         private bool EnumCallback(IntPtr hWnd, IntPtr lParam)
         {
-            var window = HwndSource.FromHwnd(hWnd)?.RootVisual as Window;
-            if (window != null && _timer != null)
+            if( HwndSource.FromHwnd(hWnd) is HwndSource source && source.RootVisual is Window rootWindow)
             {
                 try
                 {
-                    _dispatcher.Invoke(() => ShowIcons(window));
+                    this.dispatcher.Invoke(() => this.EnsureTabAppearance(rootWindow));
                 }
-                catch (TaskCanceledException)
+                catch (OperationCanceledException)
                 {
                 }
             }
@@ -100,95 +121,110 @@ namespace VSIconizer.Core
             return true;
         }
 
-        private void ShowIcons(Window window)
+        private void EnsureTabAppearance(Window window)
         {
-            if (_timer == null)
+            foreach (UIElement descendant in window.GetVisualDescendants().OfType<UIElement>())
             {
-                return;
-            }
-
-            foreach (var descendant in window.GetVisualDescendants())
-            {
-                if (_isAutohideControl(descendant))
+                if (this.vsMethods.IsAutoHide(descendant))
                 {
-                    ProcessHiddenChannel(descendant);
-                    continue;
+                    this.ProcessHiddenChannel(descendant);
                 }
-
-                if (_isDragUnlockHeader(descendant))
+                else if (this.vsMethods.IsDragUndockHeader(descendant))
                 {
-                    foreach (var grid in descendant.GetVisualDescendants().OfType<Grid>().Where(IsTargetGrid))
+                    foreach (Grid grid in descendant.GetVisualDescendants().OfType<Grid>())
                     {
-                        ProcessGrid(grid, null);
+                        if(IsToolWindowTabContentsGrid(grid, icon: out Image icon, textBlock: out TextBlock textBlock))
+                        {
+                            this.ProcessGrid(grid, transform: null, icon, textBlock);
+                        }
                     }
                 }
             }
         }
 
-        private void ProcessHiddenChannel(DependencyObject control)
+        private void ProcessHiddenChannel(UIElement control)
         {
             Transform transform = null;
 
-            if ((int)_getOrientation.Invoke(null, new[] { control }) == 1)
+            if (this.vsMethods.GetAutoHideChannelOrientation(control) == Orientation.Vertical)
             {
-                transform = new RotateTransform(-90);
+                if(this.cfg.RotateVerticalTabIcons)
+                {
+                    transform = new RotateTransform(angle: -90);
+                }
             }
 
-            if (_timer == null)
+            foreach (Grid grid in control.GetVisualDescendants().OfType<Grid>())
             {
-                return;
-            }
-
-            foreach (var grid in control.GetVisualDescendants().OfType<Grid>().Where(IsTargetGrid))
-            {
-                ProcessGrid(grid, transform);
+                if(IsToolWindowTabContentsGrid(grid, icon: out Image icon, textBlock: out TextBlock textBlock))
+                {
+                    this.ProcessGrid(grid, transform, icon, textBlock);
+                }
             }
         }
 
-        private void ProcessGrid(Grid grid, Transform transform)
+        private static bool IsToolWindowTabContentsGrid(Grid grid, out Image icon, out TextBlock textBlock)
         {
-            var image = (Image)grid.Children[0];
-            if (image.Source == null)
+            if(grid.Children.Count == 2)
             {
-                return;
+                UIElement maybeCrispImage = grid.Children[0];
+                UIElement maybeTextBlock  = grid.Children[1];
+
+                if(maybeCrispImage is Image iconCtrl && maybeTextBlock is TextBlock textBlockCtrl)
+                {
+                    icon      = iconCtrl;
+                    textBlock = textBlockCtrl;
+
+                    if(icon.Source != null)
+                    {
+                        return true;
+                    }
+                }
             }
 
-            var textBlock = (TextBlock)grid.Children[1];
-            image.Visibility = Visibility.Visible;
-            image.LayoutTransform = transform;
-            grid.Background = Brushes.Transparent;
+            icon = default;
+            textBlock = default;
+            return false;
+        }
 
-            if (ShowText)
-            {
-                textBlock.Visibility = Visibility.Visible;
-                textBlock.Margin = new Thickness(0, IconMargin.Top, IconMargin.Right, IconMargin.Bottom);
-                image.Margin = new Thickness(IconMargin.Left, IconMargin.Top, IconMargin.Right / 2, IconMargin.Bottom);
-                grid.ToolTip = null;
-            }
-            else
-            {
-                textBlock.Visibility = Visibility.Collapsed;
-                image.Margin = IconMargin;
-                grid.ToolTip = textBlock.Text;
-            }
-
-            if (_timer == null)
-            {
-                return;
-            }
-
+        /// <summary></summary>
+        /// <param name="grid">This is the WPF <see cref="Grid"/> inside the tab's <see cref="ContentPresenter"/> that has 2 immediate children: <paramref name="icon"/> and <paramref name="textBlock"/>.</param>
+        /// <param name="transform">This is <see langword="null"/> for horizontal tabs, and <see cref="_rotate90"/> for </param>
+        private void ProcessGrid(Grid grid, Transform transform, Image icon, TextBlock textBlock)
+        {
             if (grid.ColumnDefinitions.Count == 0)
             {
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                image.SetValue(Grid.ColumnProperty, 0);
+                icon.SetValue(Grid.ColumnProperty, 0);
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 textBlock.SetValue(Grid.ColumnProperty, 1);
             }
-        }
 
-        private bool IsTargetGrid(Grid grid)
-        {
-            return grid.Children.Count == 2 && _imageType.IsInstanceOfType(grid.Children[0]) && _textBlock.IsInstanceOfType(grid.Children[1]);
+            grid.Background = Brushes.Transparent;
+            grid.Margin     = this.gridMargin;
+            grid.ToolTip    = (this.textVisibility == Visibility.Visible) ? null : textBlock.Text;
+
+            icon     .Visibility = this.iconVisibility;
+            textBlock.Visibility = this.textVisibility;
+
+            icon.LayoutTransform = transform;
+
+            if(this.iconHorizontal.HasValue && this.iconVertical.HasValue)
+            {
+                icon.Margin = this.iconHorizontal.Value;
+                /*
+                if (transform is null)
+                {
+                    // Horizontal orientation:
+                    icon.Margin = this.iconHorizontal.Value;
+                }
+                else
+                {
+                    // Vertical orientation:
+                    icon.Margin = this.iconVertical.Value;
+                }
+                */
+            }
         }
     }
 }

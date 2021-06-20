@@ -7,3 +7,8 @@ indent_size = 2
 
 [*.cs]
 indent_style = space
+
+dotnet_style_qualification_for_event = true:silent
+dotnet_style_qualification_for_field = true:silent
+dotnet_style_qualification_for_method = true:silent
+dotnet_style_qualification_for_property = true:silent

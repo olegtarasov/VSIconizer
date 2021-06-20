@@ -7,8 +7,8 @@
     <ProjectGuid>{8318E1B4-77C1-48A2-957C-5205BADE0AD4}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VsIconizer.Core</RootNamespace>
-    <AssemblyName>VsIconizer.Core</AssemblyName>
+    <RootNamespace>VSIconizer.Core</RootNamespace>
+    <AssemblyName>VSIconizer.Core</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -43,6 +43,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Helper.cs" />
+    <Compile Include="IVSControlMethods.cs" />
+    <Compile Include="NativeMethods.cs" />
+    <Compile Include="ReflectedVSControlMethods.cs" />
+    <Compile Include="VSIconizerConfiguration.cs" />
     <Compile Include="VsIconizerService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

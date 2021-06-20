@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Windows;
 
-using VsIconizer.Core;
+using VSIconizer.Core;
 
 namespace VSIconizer
 {
@@ -28,43 +28,42 @@ namespace VSIconizer
     {
         public const string PackageGuidString = "376102e5-d394-4f6b-b994-145fa911c278";
 
-        private VsIconizerService _iconizerService;
+        private VSIconizerService iconizerService;
 
         protected override void Initialize()
         {
             base.Initialize();
 
-            var options = (IconizerOptionPage)GetDialogPage(typeof(IconizerOptionPage));
-            if (options.HorizontalMargin == null)
-                options.HorizontalMargin = 10;
-            if (options.VerticalMargin == null)
-                options.VerticalMargin = 5;
-            if (options.ShowText == null)
-                options.ShowText = false;
+            if (!ReflectedVSControlMethods.TryCreate( out ReflectedVSControlMethods vsMethods))
+            {
+                throw new InvalidOperationException("Failed to safely reflect required VS shell types.");
+            }
 
-            options.OptionsUpdated += OnOptionsUpdated;
+            IconizerOptionPage optionsPage = (IconizerOptionPage)this.GetDialogPage(typeof(IconizerOptionPage));
 
-            _iconizerService = new VsIconizerService(
-                (EnvDTE.DTE)GetService(typeof(EnvDTE.DTE)),
-                obj => obj.GetType().Name == "AutoHideChannelControl",
-                obj => obj.GetType().Name == "DragUndockHeader",
-                new Thickness(options.HorizontalMargin.Value, options.VerticalMargin.Value, options.HorizontalMargin.Value, options.VerticalMargin.Value),
-                options.ShowText.Value);
+            VSIconizerConfiguration cfg = optionsPage.ToVSIconizerConfiguration();
+
+            optionsPage.OptionsUpdated += this.OnOptionsUpdated;
+
+            this.iconizerService = new VSIconizerService(
+//              dte       : (EnvDTE.DTE)GetService(typeof(EnvDTE.DTE)),
+//              events    : ,
+                vsMethods : vsMethods,
+                currentCfg: cfg
+            );
         }
 
-        private void OnOptionsUpdated(object sender, EventArgs e)
+        private void OnOptionsUpdated(object sender, OptionsUpdatedEventArgs e)
         {
-            var options = (IconizerOptionPage)sender;
-            if (_iconizerService != null)
+            if (this.iconizerService != null)
             {
-                _iconizerService.IconMargin = new Thickness(options.HorizontalMargin.Value, options.VerticalMargin.Value, options.HorizontalMargin.Value, options.VerticalMargin.Value);
-                _iconizerService.ShowText = options.ShowText.Value;
+                this.iconizerService.ApplyConfiguration(e.Configuration);
             }
         }
 
         protected override int QueryClose(out bool canClose)
         {
-            _iconizerService.Shutdown();
+            this.iconizerService.Shutdown();
             return base.QueryClose(out canClose);
         }
     }

@@ -1,63 +1,99 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Reflection;
+
+using VSIconizer.Core;
 
 namespace VSIconizer
 {
     public partial class IconizerOptionsControl : UserControl
     {
-        private IconizerOptionPage _options;
+        private IconizerOptionPage parentPage;
 
         public IconizerOptionsControl()
         {
-            InitializeComponent();
+            this.InitializeComponent();
+
+            this.modeCmb.ValueMember   = nameof(VSIconizerModeComboBoxItem.Value);
+            this.modeCmb.DisplayMember = nameof(VSIconizerModeComboBoxItem.DisplayText);
+            this.modeCmb.DataSource    = VSIconizerModeComboBoxItem.Items;
+
+            this.modeCmb        .SelectedValueChanged += this.ModeCmb_SelectedValueChanged;
+            this.tHMargin       .ValueChanged         += this.OnUserChange;
+            this.tVMargin       .ValueChanged         += this.OnUserChange;
+            this.iconTextSpacing.ValueChanged         += this.OnUserChange;
+            this.rotateChk      .CheckedChanged       += this.OnUserChange;
         }
 
-        internal void Initialize(IconizerOptionPage options)
+        private void ModeCmb_SelectedValueChanged(object sender, EventArgs e)
         {
-            _options = options;
-            tHMargin.Value = options.HorizontalMargin.GetValueOrDefault(10);
-            tVMargin.Value = options.VerticalMargin.GetValueOrDefault(5);
-            cbShowText.Checked = options.ShowText.GetValueOrDefault(false);
+            VSIconizerMode currentMode = (VSIconizerMode)this.modeCmb.SelectedValue;
 
-            UpdateH();
-            UpdateV();
-            UpdateST();
+            this.lblHMargin        .Visible = (currentMode != VSIconizerMode.Default);
+            this.tHMargin          .Visible = (currentMode != VSIconizerMode.Default);
+                                   
+            this.lblVMargin        .Visible = (currentMode != VSIconizerMode.Default);
+            this.tVMargin          .Visible = (currentMode != VSIconizerMode.Default);
+
+            this.iconTextSpacingLbl.Visible = (currentMode == VSIconizerMode.IconAndText);
+            this.iconTextSpacing   .Visible = (currentMode == VSIconizerMode.IconAndText);
+
+            this.layout            .RowStyles[3].Height = (currentMode == VSIconizerMode.IconAndText) ? 27F : 0;
+
+            this.rotateChk         .Visible = (currentMode.ShowIcon());
+
+            //
+
+            this.OnUserChange(sender, e);
         }
 
-        private void tHMargin_ValueChanged(object sender, EventArgs e)
+        public void Initialize(IconizerOptionPage parentPage, VSIconizerConfiguration configuration)
         {
-            UpdateH();
+            this.parentPage = parentPage ?? throw new ArgumentNullException(nameof(parentPage));
+
+            this.PopulateControlsFromConfiguration(configuration);
         }
 
-        private void tVMargin_ValueChanged(object sender, EventArgs e)
+        private void PopulateControlsFromConfiguration(VSIconizerConfiguration configuration)
         {
-            UpdateV();
+            if (configuration is null) throw new ArgumentNullException(nameof(configuration));
+
+            this.suppressUserChange = true;
+            try
+            {
+                this.modeCmb.SelectedValue = configuration.Mode;
+
+                this.tHMargin       .Value = new Decimal(configuration.HorizontalSpacing);
+                this.tVMargin       .Value = new Decimal(configuration.VerticalSpacing);
+                this.iconTextSpacing.Value = new Decimal(configuration.IconTextSpacing);
+                this.rotateChk    .Checked = configuration.RotateVerticalTabIcons;
+            }
+            finally
+            {
+                this.suppressUserChange = false;
+            }
         }
 
-        private void cbShowText_CheckedChanged(object sender, EventArgs e)
+        /// <summary>Creates a new <see cref="VSIconizerConfiguration"/> from the WinForms controls.</summary>
+        public VSIconizerConfiguration GetVSIconizerConfiguration()
         {
-            UpdateST();
+            return new VSIconizerConfiguration(
+                mode                  : (VSIconizerMode)this.modeCmb.SelectedValue,
+                horizontalSpacing     : (double)this.tHMargin       .Value,
+                verticalSpacing       : (double)this.tVMargin       .Value,
+                iconTextSpacing       : (double)this.iconTextSpacing.Value,
+                rotateVerticalTabIcons: this.rotateChk.Checked
+            );
         }
 
-        private void tHMargin_KeyUp(object sender, KeyEventArgs e)
+        private bool suppressUserChange;
+
+        private void OnUserChange(object _, EventArgs e)
         {
-            UpdateH();
-        }
+            if (this.suppressUserChange) return;
 
-        private void tVMargin_KeyUp(object sender, KeyEventArgs e)
-        {
-            UpdateV();
+            VSIconizerConfiguration newCfg = this.GetVSIconizerConfiguration();
+            this.parentPage.Apply(newCfg);
         }
-
-        private void UpdateH() => _options.NewHorizontalMargin = (int)tHMargin.Value;
-        private void UpdateV() => _options.NewVerticalMargin = (int)tVMargin.Value;
-        private void UpdateST() => _options.NewShowText = cbShowText.Checked;
     }
 }
