@@ -141,7 +141,7 @@ namespace VSIconizer.Core
         {
             foreach (UIElement descendant in window.GetVisualDescendants().OfType<UIElement>())
             {
-                if (this.vsMethods.IsAutoHide(descendant))
+                if (this.vsMethods.IsAutoHideChannel(descendant))
                 {
                     this.ProcessHiddenChannel(descendant);
                 }
@@ -220,9 +220,16 @@ namespace VSIconizer.Core
             {
                 if (this.cfg.UseTabColors && this.cfg.TabColors.TryGetValue(textBlock.Text, out WpfColor tabColor) && this.brushes.TryGetValue(tabColor, out SolidColorBrush brush))
                 {
-                    if (grid.Background is null)
+                    Border tabItemBackgroundArea = this.TryGetTabItemBackgroundAreaOrNull(grid);
+                    if (tabItemBackgroundArea != null)
                     {
-                        grid.Background = brush;
+                        tabItemBackgroundArea.Background = brush;
+                    }
+
+                    Border thicc = this.TryGetCollapsedTabItemThiccBorder(grid);
+                    if (thicc != null)
+                    {
+                        thicc.Background = brush;
                     }
                 }
                 else
@@ -246,6 +253,91 @@ namespace VSIconizer.Core
                     icon.Margin = this.iconHorizontal.Value;
                 }
             }
+        }
+
+        private Border TryGetTabItemBackgroundAreaOrNull(Grid tabItemGrid)
+        {
+            DependencyObject parent = tabItemGrid.TemplatedParent;
+
+#if DEBUG
+            List<DependencyObject> ancestors = parent.GetVisualAncestors().ToList();
+#else
+            IEnumerable<DependencyObject> ancestors = parent.GetVisualAncestors();
+#endif
+            foreach (DependencyObject obj in ancestors)
+            {
+                if (obj is UIElement objUIElement && this.vsMethods.IsDragUndockHeader(objUIElement))
+                {
+                    if (VisualTreeHelper.GetParent(objUIElement) is ContentPresenter dragUndockPresenter)
+                    {
+                        if (VisualTreeHelper.GetParent(dragUndockPresenter) is Border tabAreaBorder)
+                        {
+                            return tabAreaBorder;
+                        }
+                    }
+                }
+
+                /*
+                DependencyObject maybeParentTabPanel = VisualTreeHelper.GetParent(obj);
+                if (maybeParentTabPanel is Panel tabPanel && tabPanel.Name == "PART_TabPanel")
+                {
+                    // Go no higher. But this also means the current item is the tab item.
+                    if (obj is TabItem tabItem)
+                    {
+                        tabItem.Background = brush;
+                        break;
+                    }
+                }
+
+                if (obj is Grid anotherGrid)
+                {
+                    anotherGrid.Background = brush;
+//                            break;
+                }
+                else if (obj is Border border)
+                {
+                    if (border.Name == "TabBorder")
+                    {
+                        border.BorderBrush = brush;
+                        border.Background = brush;
+//                              break;
+                    }
+
+                    
+                }
+                */
+            }
+
+            return null;
+
+//          if (grid.Background is null || grid.Background != brush)
+//          {
+//              grid.Background = brush;
+//          }
+        }
+
+        private Border TryGetCollapsedTabItemThiccBorder(Grid tabItemGrid)
+        {
+            DependencyObject parent = tabItemGrid.TemplatedParent;
+
+#if DEBUG
+            List<DependencyObject> ancestors = parent.GetVisualAncestors().ToList();
+#else
+            IEnumerable<DependencyObject> ancestors = parent.GetVisualAncestors();
+#endif
+            foreach (DependencyObject obj in ancestors)
+            {
+                if (obj is Border border)// && border.Name == "TabBorder")
+                {
+                    // We want the <Border> that's the immediate visual child of the AutoHideTabItem:
+                    if (VisualTreeHelper.GetParent(border) is UIElement maybeAutoHideTabItem && this.vsMethods.IsAutoHideTabItem(maybeAutoHideTabItem))
+                    {
+                        return border;
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

@@ -7,7 +7,9 @@ namespace VSIconizer.Core
     {
         Orientation GetAutoHideChannelOrientation(UIElement control);
 
-        bool IsAutoHide(UIElement control);
+        bool IsAutoHideChannel(UIElement control);
+
+        bool IsAutoHideTabItem(UIElement control);
 
         bool IsDragUndockHeader(UIElement control);
     }

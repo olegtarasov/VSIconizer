@@ -30,16 +30,6 @@ namespace VSIconizerOptionsTestHost
 
         private void ReloadBtn_Click(object sender, EventArgs e)
         {
-            /*
-
-"Error List","#FFFF0000"
-"Git Changes ""","#FFFF4500"
-Properties,"#FFFFA500"
-"Solution Explorer","#FF6495ED"
-
-
-            */
-
             this.Repopulate();
         }
 
@@ -48,6 +38,9 @@ Properties,"#FFFFA500"
             base.OnLoad(e);
 
             this.Repopulate();
+
+            QuickAndHorribleCsvUnitTests();
+            QuickAndHorribleCsvUnitTests2_RoundTrip();
         }
 
         void IIconizerOptionPage.Apply(VSIconizerConfiguration newConfiguration)
@@ -76,6 +69,130 @@ Properties,"#FFFFA500"
             else
             {
                 this.iconizerOptionsControl1.Initialize(parentPage: this, cfg);
+            }
+        }
+
+/*
+
+"Error List","#FFFF0000"
+"Git Changes ""","#FFFF4500"
+Properties,"#FFFFA500"
+"Solution Explorer","#FF6495ED"
+
+ */
+
+        private static void QuickAndHorribleCsvUnitTests()
+        {
+            // Same as the comment above. "Git Changes" has 3 double-quotes after it, which is valid.
+            // The empty lines should be ignored.
+            const String csvInput = @"
+
+""Error List"",""#FFFF0000""
+""Git Changes """""",""#FFFF4500""
+Properties,""#FFFFA500""
+""Solution Explorer"",""#FF6495ED""
+
+
+";
+
+            var dict = TabColorsSerialization.ReadTabColorsCsv(csvInput);
+            bool ok =
+                dict.Count == 4 &&
+                dict.ContainsKey("Error List") &&
+                dict.ContainsKey("Git Changes \"") &&
+                dict.ContainsKey("Properties") &&
+                dict.ContainsKey("Solution Explorer");
+
+            if( ok )
+            {
+                Boolean ok2 =
+                    ( dict["Error List"].A == 0xFF && dict["Error List"].R == 0xFF && dict["Error List"].G == 0x00 );
+
+                Boolean ok3 =
+                    ( dict["Git Changes \""].A == 0xFF && dict["Git Changes \""].R == 0xFF && dict["Git Changes \""].G == 0x45 );
+
+                if( !ok2 || !ok3 )
+                {
+                    System.Diagnostics.Debugger.Break();
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debugger.Break();
+            }
+        }
+
+        private static void QuickAndHorribleCsvUnitTests2()
+        {
+            // Same as the comment above. "Git Changes" has 3 double-quotes after it, which is valid.
+            // The empty lines should be ignored.
+            const String csvInput = @"
+
+""Error List"",""#FFFF0000""
+""Git Changes """""""""",""#FFFF4500""
+Properties,""#FFFFA500""
+""Solution Explorer"",""#FF6495ED""
+
+
+";
+
+            var dict = TabColorsSerialization.ReadTabColorsCsv(csvInput);
+            bool ok =
+                dict.Count == 4 &&
+                dict.ContainsKey("Error List") &&
+                dict.ContainsKey("Git Changes \"\"") &&
+                dict.ContainsKey("Properties") &&
+                dict.ContainsKey("Solution Explorer");
+
+            if( ok )
+            {
+                Boolean ok2 =
+                    ( dict["Error List"].A == 0xFF && dict["Error List"].R == 0xFF && dict["Error List"].G == 0x00 );
+
+                Boolean ok3 =
+                    ( dict["Git Changes \"\""].A == 0xFF && dict["Git Changes \"\""].R == 0xFF && dict["Git Changes \"\""].G == 0x45 );
+
+                if( !ok2 || !ok3 )
+                {
+                    System.Diagnostics.Debugger.Break();
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debugger.Break();
+            }
+        }
+
+        private static void QuickAndHorribleCsvUnitTests2_RoundTrip()
+        {
+            const String csvInput = @"
+
+""Error List"",""#FFFF0000""
+""Git Changes """""",""#FFFF4500""
+Properties,""#FFFFA500""
+""Solution Explorer"",""#FF6495ED""
+
+
+";
+
+            var dict1 = TabColorsSerialization.ReadTabColorsCsv(csvInput);
+
+            string toCsv1 = TabColorsSerialization.SerializeTabColorsToCsv(dict1);
+
+            var dict2 = TabColorsSerialization.ReadTabColorsCsv(toCsv1);
+
+            string toCsv2 = TabColorsSerialization.SerializeTabColorsToCsv(dict2);
+
+            var dict3 = TabColorsSerialization.ReadTabColorsCsv(toCsv2);
+
+            string toCsv3 = TabColorsSerialization.SerializeTabColorsToCsv(dict3);
+            
+            //
+
+            bool ok = toCsv1.Equals(toCsv2) && toCsv2.Equals(toCsv3);
+            if( !ok )
+            {
+                System.Diagnostics.Debugger.Break();
             }
         }
     }

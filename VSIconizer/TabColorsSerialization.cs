@@ -76,6 +76,7 @@ namespace VSIconizer.Core
             else
             {
                 // Unquoted string. Read until the next `,`, `\r\n` or EOF:
+                _ = sb.Append(c);
                 return ReadUnquotedCsvString(rdr, sb);
             }
         }
@@ -127,6 +128,7 @@ namespace VSIconizer.Core
                     {
                         // Doubled-up (escaped) quote, i.e. the end of the field.
                         _ = sb.Append('"');
+                        inQuote = false;
                     }
                     else if (c == ',' || c == '\r' || c == '\n')
                     {

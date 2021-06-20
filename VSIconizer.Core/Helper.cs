@@ -35,5 +35,15 @@ namespace VSIconizer.Core
                 }
             }
         }
+
+        public static IEnumerable<DependencyObject> GetVisualAncestors(this DependencyObject descendant)
+        {
+            DependencyObject node = descendant;
+            while (node != null)
+            {
+                yield return node;
+                node = VisualTreeHelper.GetParent(node);
+            }
+        }
     }
 }

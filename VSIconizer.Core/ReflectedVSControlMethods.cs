@@ -39,9 +39,10 @@ namespace VSIconizer.Core
         public static bool TryCreate(Assembly shellViewManagerAssembly, out ReflectedVSControlMethods instance)
         {
             Type typeofAutoHideChannelControl = shellViewManagerAssembly.GetType("Microsoft.VisualStudio.PlatformUI.Shell.Controls.AutoHideChannelControl");
+            Type typeofAutoHideTabItem        = shellViewManagerAssembly.GetType("Microsoft.VisualStudio.PlatformUI.Shell.Controls.AutoHideTabItem");
             Type typeofDragUndockHeader       = shellViewManagerAssembly.GetType("Microsoft.VisualStudio.PlatformUI.Shell.Controls.DragUndockHeader");
 
-            if (typeofAutoHideChannelControl != null && typeofDragUndockHeader != null)
+            if (typeofAutoHideChannelControl != null && typeofAutoHideTabItem != null && typeofDragUndockHeader != null)
             {
                 // public static Orientation GetOrientation(UIElement element)
                 MethodInfo getOrientationMethod = typeofAutoHideChannelControl.GetMethod("GetOrientation", BindingFlags.Static | BindingFlags.Public);
@@ -49,7 +50,7 @@ namespace VSIconizer.Core
                 {
                     GetOrientationFunc getOrientationFunc = (GetOrientationFunc)getOrientationMethod.CreateDelegate(typeof(GetOrientationFunc));
 
-                    instance = new ReflectedVSControlMethods(getOrientationFunc, typeofAutoHideChannelControl, typeofDragUndockHeader);
+                    instance = new ReflectedVSControlMethods(getOrientationFunc, typeofAutoHideChannelControl, typeofAutoHideTabItem, typeofDragUndockHeader);
                     return true;
                 }
             }
@@ -62,16 +63,19 @@ namespace VSIconizer.Core
 
         private readonly GetOrientationFunc getOrientationFunc;
         private readonly Type               typeofAutoHideChannelControl;
+        private readonly Type               typeofAutoHideTabItem;
         private readonly Type               typeofDragUndockHeader;
 
         private ReflectedVSControlMethods(
             GetOrientationFunc getOrientationFunc,
             Type               typeofAutoHideChannelControl,
+            Type               typeofAutoHideTabItem,
             Type               typeofDragUndockHeader
         )
         {
             this.getOrientationFunc           = getOrientationFunc           ?? throw new ArgumentNullException(nameof(getOrientationFunc));
             this.typeofAutoHideChannelControl = typeofAutoHideChannelControl ?? throw new ArgumentNullException(nameof(typeofAutoHideChannelControl));
+            this.typeofAutoHideTabItem        = typeofAutoHideTabItem        ?? throw new ArgumentNullException(nameof(typeofAutoHideTabItem));
             this.typeofDragUndockHeader       = typeofDragUndockHeader       ?? throw new ArgumentNullException(nameof(typeofDragUndockHeader));
         }
 
@@ -82,9 +86,14 @@ namespace VSIconizer.Core
             return this.getOrientationFunc(control);
         }
 
-        public bool IsAutoHide(UIElement control)
+        public bool IsAutoHideChannel(UIElement control)
         {
             return this.typeofAutoHideChannelControl.IsInstanceOfType(control);
+        }
+
+        public bool IsAutoHideTabItem(UIElement control)
+        {
+            return this.typeofAutoHideTabItem.IsInstanceOfType(control);
         }
 
         public bool IsDragUndockHeader(UIElement control)

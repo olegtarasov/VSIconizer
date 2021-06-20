@@ -51,7 +51,8 @@ namespace VSIconizer
             this.tabColorsCsvTxt.Font = new Font(family: FontFamily.GenericMonospace, emSize: this.Font.Size);
             this.tabColorsCsvTxt.Size = tabColorsEditorSize;
             this.tabColorsCsvTxt.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Bottom;
-            this.tabColorsCsvTxt.KeyPress += this.TabColorsCsvTxt_KeyPress;
+            //            this.tabColorsCsvTxt.KeyPress += this.TabColorsCsvTxt_KeyPress;
+            this.tabColorsCsvTxt.TextChanged += this.TabColorsCsvTxt_TextChanged;
             this.layout.SetCellPosition(this.tabColorsCsvTxt, new TableLayoutPanelCellPosition(column: 1, row: _tabColorsEditorRowIdx));
 #endif
 
@@ -98,8 +99,15 @@ namespace VSIconizer
         }
 
 #if !USE_DATA_GRID_VIEW
+        private void TabColorsCsvTxt_TextChanged(object sender, EventArgs e)
+        {
+            // ...doing this on every keystroke... what could possibly go wrong?!
+            this.OnUserChange(sender, e);
+        }
+
         private void TabColorsCsvTxt_KeyPress(object sender, KeyPressEventArgs e)
         {
+            // This doesn't work, VS intercepts the Enter/Return key-press first.
             if(e.KeyChar == (char)Keys.Return)
             {
                 this.OnUserChange(sender, e);
