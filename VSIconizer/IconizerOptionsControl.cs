@@ -1,6 +1,9 @@
-﻿using System;
+﻿//#define USE_DATA_GRID_VIEW // Disabled because when using the DataGridView and editing the color-text cell this causes a stack-overflow/infinite-loop in Visual Studio's Win32 Message Pump for reasons I don't understand.
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -16,8 +19,12 @@ namespace VSIconizer
     {
         private IIconizerOptionPage parentPage;
 
+#if USE_DATA_GRID_VIEW
         private readonly BindingList<TabColorEditorRow> tabColorBindingList = new BindingList<TabColorEditorRow>();
         private readonly BindingSource tabColorBindingSource;
+#endif
+
+        private readonly TextBox tabColorsCsvTxt = new TextBox();
 
         private const int _horizontalMarginRowIdx = 1;
         private const int _verticalMarginRowIdx   = 2;
@@ -32,9 +39,26 @@ namespace VSIconizer
         {
             this.InitializeComponent();
 
+#if !USE_DATA_GRID_VIEW // HACK: Quick-and-dirty replacement for now:
+            Size tabColorsEditorSize = this.tabColorsEditor.Size;
+            Control tabColorsEditorParent = this.tabColorsEditor.Parent;
+            tabColorsEditorParent.Controls.Remove(this.tabColorsEditor);
+            tabColorsEditorParent.Controls.Add(this.tabColorsCsvTxt);
+
+            this.tabColorsCsvTxt.Multiline = true;
+            this.tabColorsCsvTxt.AcceptsReturn = true;
+            this.tabColorsCsvTxt.TabIndex = this.tabColorsEditor.TabIndex;
+            this.tabColorsCsvTxt.Font = new Font(family: FontFamily.GenericMonospace, emSize: this.Font.Size);
+            this.tabColorsCsvTxt.Size = tabColorsEditorSize;
+            this.tabColorsCsvTxt.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Bottom;
+            this.tabColorsCsvTxt.KeyPress += this.TabColorsCsvTxt_KeyPress;
+            this.layout.SetCellPosition(this.tabColorsCsvTxt, new TableLayoutPanelCellPosition(column: 1, row: _tabColorsEditorRowIdx));
+#endif
+
             this.suppressUserChange = true;
             try
             {
+#if USE_DATA_GRID_VIEW
                 // Tab Colors Editor:
                 {
                     this.tabColorBindingSource = new BindingSource(dataSource: this.tabColorBindingList, dataMember: null);
@@ -46,10 +70,12 @@ namespace VSIconizer
                     this.tabColorsEditor.CellFormatting   += this.TabColorsEditor_CellFormatting;
                     this.tabColorsEditor.CellValueChanged += this.OnUserChange; // > "If the value is successfully committed, the CellValueChanged event occurs."
 
+                    this.colValid     .DataPropertyName = nameof(TabColorEditorRow.IsValid);
                     this.colTabText   .DataPropertyName = nameof(TabColorEditorRow.TabText);
                     this.colColorValue.DataPropertyName = nameof(TabColorEditorRow.ColorText);
                     this.colColorBtn  .DataPropertyName = nameof(TabColorEditorRow.WpfColor);
                 }
+#endif
 
                 this.modeCmb.ValueMember   = nameof(VSIconizerModeComboBoxItem.Value);
                 this.modeCmb.DisplayMember = nameof(VSIconizerModeComboBoxItem.DisplayText);
@@ -71,13 +97,31 @@ namespace VSIconizer
             }
         }
 
+#if !USE_DATA_GRID_VIEW
+        private void TabColorsCsvTxt_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if(e.KeyChar == (char)Keys.Return)
+            {
+                this.OnUserChange(sender, e);
+            }
+        }
+#endif
+
         private VSIconizerMode SelectedMode => (VSIconizerMode)this.modeCmb.SelectedValue;
 
         public void Initialize(IIconizerOptionPage parentPage, VSIconizerConfiguration configuration)
         {
-            if (this.parentPage != null) throw new InvalidOperationException("Already initialized.");
+            if (parentPage is null) throw new ArgumentNullException(nameof(parentPage));
 
-            this.parentPage = parentPage ?? throw new ArgumentNullException(nameof(parentPage));
+            if (this.parentPage != null)
+            {
+                if(!Object.ReferenceEquals(this.parentPage, parentPage))
+                {
+                    throw new InvalidOperationException("Already initialized.");
+                }
+            }
+
+            this.parentPage = parentPage;
 
             this.PopulateControlsFromConfiguration(configuration);
         }
@@ -112,6 +156,7 @@ namespace VSIconizer
 
         private void PopulateTabColorsGrid(ColorDict colors)
         {
+#if USE_DATA_GRID_VIEW
             this.tabColorBindingList.Clear();
 
             foreach(string tabText in colors.Keys.OrderBy(k => k))
@@ -121,10 +166,14 @@ namespace VSIconizer
                 TabColorEditorRow row = TabColorEditorRow.FromWpfColor(tabText, wpfColor);
                 this.tabColorBindingList.Add(row);
             }
+#else
+            this.tabColorsCsvTxt.Text = TabColorsSerialization.SerializeTabColorsToCsv(colors);
+#endif
         }
 
         private ColorDict GetTabColorsDict()
         {
+#if USE_DATA_GRID_VIEW
             if (this.tabColorBindingList.Count == 0)
             {
                 return VSIconizerConfiguration.EmptyTabColors;
@@ -136,8 +185,12 @@ namespace VSIconizer
                 .GroupBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase) // Dedupe:
                 .Select(grp => grp.First())
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
+#else
+            return TabColorsSerialization.ReadTabColorsCsv(this.tabColorsCsvTxt.Text);
+#endif
         }
 
+#if USE_DATA_GRID_VIEW
         // https://stackoverflow.com/questions/3577297/how-to-handle-click-event-in-button-column-in-datagridview
         private void TabColorsEditor_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
@@ -149,13 +202,11 @@ namespace VSIconizer
                     GdiColor gdiColor = this.colorDialog.Color;
 
                     TabColorEditorRow row = this.tabColorBindingList[e.RowIndex]; // <-- Is this right?
-
-//                  DataGridViewButtonCell cell = (DataGridViewButtonCell)this.tabColorsEditor.Rows[e.RowIndex].Cells[e.ColumnIndex];
-
                     row.WpfColor = gdiColor.ToWpfColor();
                 }
             }
         }
+#endif
 
         private void TabColorsEditor_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {

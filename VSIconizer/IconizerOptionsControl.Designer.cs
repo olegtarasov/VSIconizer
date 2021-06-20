@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
 			this.lblHMargin = new System.Windows.Forms.Label();
 			this.lblVMargin = new System.Windows.Forms.Label();
 			this.tHMargin = new System.Windows.Forms.NumericUpDown();
@@ -35,16 +36,17 @@
 			this.modeLbl = new System.Windows.Forms.Label();
 			this.layout = new System.Windows.Forms.TableLayoutPanel();
 			this.tabColorsEditor = new System.Windows.Forms.DataGridView();
-			this.colTabText = new System.Windows.Forms.DataGridViewTextBoxColumn();
-			this.colColorValue = new System.Windows.Forms.DataGridViewTextBoxColumn();
-			this.colColorBtn = new System.Windows.Forms.DataGridViewButtonColumn();
 			this.iconTextSpacing = new System.Windows.Forms.NumericUpDown();
 			this.modeCmb = new System.Windows.Forms.ComboBox();
 			this.iconTextSpacingLbl = new System.Windows.Forms.Label();
 			this.rotateChk = new System.Windows.Forms.CheckBox();
 			this.useTabColorsChk = new System.Windows.Forms.CheckBox();
-			this.tabColorEditorLbl = new System.Windows.Forms.Label();
+			this.tabColorsEditorLbl = new System.Windows.Forms.Label();
 			this.colorDialog = new System.Windows.Forms.ColorDialog();
+			this.colValid = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+			this.colTabText = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.colColorValue = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.colColorBtn = new System.Windows.Forms.DataGridViewButtonColumn();
 			((System.ComponentModel.ISupportInitialize)(this.tHMargin)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.tVMargin)).BeginInit();
 			this.layout.SuspendLayout();
@@ -120,7 +122,7 @@
 			this.layout.Controls.Add(this.iconTextSpacingLbl, 0, 3);
 			this.layout.Controls.Add(this.rotateChk, 1, 4);
 			this.layout.Controls.Add(this.useTabColorsChk, 1, 5);
-			this.layout.Controls.Add(this.tabColorEditorLbl, 0, 6);
+			this.layout.Controls.Add(this.tabColorsEditorLbl, 0, 6);
 			this.layout.Location = new System.Drawing.Point(0, 0);
 			this.layout.Name = "layout";
 			this.layout.RowCount = 7;
@@ -144,6 +146,7 @@
 			this.tabColorsEditor.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
 			this.tabColorsEditor.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
 			this.tabColorsEditor.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.colValid,
             this.colTabText,
             this.colColorValue,
             this.colColorBtn});
@@ -155,30 +158,6 @@
 			this.tabColorsEditor.RowHeadersWidthSizeMode = System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode.DisableResizing;
 			this.tabColorsEditor.Size = new System.Drawing.Size(296, 373);
 			this.tabColorsEditor.TabIndex = 10;
-			// 
-			// colTabText
-			// 
-			this.colTabText.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
-			this.colTabText.HeaderText = "Tool tab text";
-			this.colTabText.MinimumWidth = 75;
-			this.colTabText.Name = "colTabText";
-			this.colTabText.Width = 91;
-			// 
-			// colColorValue
-			// 
-			this.colColorValue.HeaderText = "Color";
-			this.colColorValue.Name = "colColorValue";
-			this.colColorValue.Width = 56;
-			// 
-			// colColorBtn
-			// 
-			this.colColorBtn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-			this.colColorBtn.HeaderText = "Picker";
-			this.colColorBtn.MinimumWidth = 75;
-			this.colColorBtn.Name = "colColorBtn";
-			this.colColorBtn.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-			this.colColorBtn.UseColumnTextForButtonValue = true;
-			this.colColorBtn.Width = 75;
 			// 
 			// iconTextSpacing
 			// 
@@ -232,13 +211,52 @@
 			// 
 			// tabColorEditorLbl
 			// 
-			this.tabColorEditorLbl.Dock = System.Windows.Forms.DockStyle.Top;
-			this.tabColorEditorLbl.Location = new System.Drawing.Point(2, 164);
-			this.tabColorEditorLbl.Margin = new System.Windows.Forms.Padding(2);
-			this.tabColorEditorLbl.Name = "tabColorEditorLbl";
-			this.tabColorEditorLbl.Size = new System.Drawing.Size(100, 23);
-			this.tabColorEditorLbl.TabIndex = 11;
-			this.tabColorEditorLbl.Text = "Tool tab colors";
+			this.tabColorsEditorLbl.Dock = System.Windows.Forms.DockStyle.Top;
+			this.tabColorsEditorLbl.Location = new System.Drawing.Point(2, 164);
+			this.tabColorsEditorLbl.Margin = new System.Windows.Forms.Padding(2);
+			this.tabColorsEditorLbl.Name = "tabColorsEditorLbl";
+			this.tabColorsEditorLbl.Size = new System.Drawing.Size(100, 23);
+			this.tabColorsEditorLbl.TabIndex = 11;
+			this.tabColorsEditorLbl.Text = "Tool tab colors";
+			// 
+			// colValid
+			// 
+			this.colValid.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+			dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.TopCenter;
+			dataGridViewCellStyle1.NullValue = false;
+			this.colValid.DefaultCellStyle = dataGridViewCellStyle1;
+			this.colValid.HeaderText = "✔️";
+			this.colValid.MinimumWidth = 30;
+			this.colValid.Name = "colValid";
+			this.colValid.ReadOnly = true;
+			this.colValid.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+			this.colValid.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+			this.colValid.ToolTipText = "Indicates the tab color row is valid.";
+			this.colValid.Width = 30;
+			// 
+			// colTabText
+			// 
+			this.colTabText.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+			this.colTabText.HeaderText = "Tool tab text";
+			this.colTabText.MinimumWidth = 75;
+			this.colTabText.Name = "colTabText";
+			this.colTabText.Width = 91;
+			// 
+			// colColorValue
+			// 
+			this.colColorValue.HeaderText = "Color";
+			this.colColorValue.Name = "colColorValue";
+			this.colColorValue.Width = 56;
+			// 
+			// colColorBtn
+			// 
+			this.colColorBtn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+			this.colColorBtn.HeaderText = "Picker";
+			this.colColorBtn.MinimumWidth = 75;
+			this.colColorBtn.Name = "colColorBtn";
+			this.colColorBtn.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+			this.colColorBtn.UseColumnTextForButtonValue = true;
+			this.colColorBtn.Width = 75;
 			// 
 			// IconizerOptionsControl
 			// 
@@ -260,22 +278,23 @@
 
         #endregion
 
-        private System.Windows.Forms.Label lblHMargin;
-        private System.Windows.Forms.Label lblVMargin;
-        private System.Windows.Forms.NumericUpDown tHMargin;
-        private System.Windows.Forms.NumericUpDown tVMargin;
-        private System.Windows.Forms.Label modeLbl;
-        private System.Windows.Forms.TableLayoutPanel layout;
-        private System.Windows.Forms.ComboBox modeCmb;
-        private System.Windows.Forms.NumericUpDown iconTextSpacing;
-        private System.Windows.Forms.Label iconTextSpacingLbl;
-        private System.Windows.Forms.CheckBox rotateChk;
-        private System.Windows.Forms.CheckBox useTabColorsChk;
-        private System.Windows.Forms.DataGridView tabColorsEditor;
-        private System.Windows.Forms.ColorDialog colorDialog;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colTabText;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colColorValue;
-        private System.Windows.Forms.DataGridViewButtonColumn colColorBtn;
-        private System.Windows.Forms.Label tabColorEditorLbl;
+        private System.Windows.Forms.Label                      lblHMargin;
+        private System.Windows.Forms.Label                      lblVMargin;
+        private System.Windows.Forms.NumericUpDown              tHMargin;
+        private System.Windows.Forms.NumericUpDown              tVMargin;
+        private System.Windows.Forms.Label                      modeLbl;
+        private System.Windows.Forms.TableLayoutPanel           layout;
+        private System.Windows.Forms.ComboBox                   modeCmb;
+        private System.Windows.Forms.NumericUpDown              iconTextSpacing;
+        private System.Windows.Forms.Label                      iconTextSpacingLbl;
+        private System.Windows.Forms.CheckBox                   rotateChk;
+        private System.Windows.Forms.CheckBox                   useTabColorsChk;
+        private System.Windows.Forms.DataGridView               tabColorsEditor;
+        private System.Windows.Forms.ColorDialog                colorDialog;
+        private System.Windows.Forms.Label                      tabColorsEditorLbl;
+        private System.Windows.Forms.DataGridViewCheckBoxColumn colValid;
+        private System.Windows.Forms.DataGridViewTextBoxColumn  colTabText;
+        private System.Windows.Forms.DataGridViewTextBoxColumn  colColorValue;
+        private System.Windows.Forms.DataGridViewButtonColumn   colColorBtn;
     }
 }
