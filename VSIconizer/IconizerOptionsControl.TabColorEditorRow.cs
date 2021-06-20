@@ -5,6 +5,7 @@ using VSIconizer.Core;
 
 namespace VSIconizer
 {
+#if USE_DATA_GRID_VIEW
     using GdiColor  = System.Drawing.Color;
     using WpfColor  = System.Windows.Media.Color;
     using WpfColors = System.Windows.Media.Colors;
@@ -84,4 +85,5 @@ namespace VSIconizer
             }
         }
     }
+#endif
 }

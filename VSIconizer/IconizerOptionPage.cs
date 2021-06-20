@@ -35,9 +35,14 @@ namespace VSIconizer
 
         public void Apply(VSIconizerConfiguration newConfiguration)
         {
-            this.newestConfiguration = newConfiguration ?? throw new ArgumentNullException(nameof(newConfiguration));
+            if(newConfiguration is null) throw new ArgumentNullException(nameof(newConfiguration));
 
-            this.OnApply(new PageApplyEventArgs { ApplyBehavior = ApplyKind.Apply });
+            // Ensure it's actually different....
+            if(this.newestConfiguration is null || !this.newestConfiguration.Equals(newConfiguration))
+            {
+                this.newestConfiguration = newConfiguration;
+                this.OnApply(new PageApplyEventArgs { ApplyBehavior = ApplyKind.Apply });
+            }
         }
 
         /// <summary>Saves current settings from <see cref="control"/> to the VS profile/registry.</summary>
@@ -50,7 +55,7 @@ namespace VSIconizer
 
             if (e.ApplyBehavior == ApplyKind.Apply)
             {
-                //              VSIconizerConfiguration desired = this.control.ToVSIconizerConfiguration();
+//              VSIconizerConfiguration desired = this.control.ToVSIconizerConfiguration();
                 VSIconizerConfiguration desired = this.newestConfiguration;
 
                 this.Mode              = desired.Mode.ToString();

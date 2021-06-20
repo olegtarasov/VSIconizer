@@ -49,9 +49,9 @@ namespace VSIconizer
             this.tabColorsCsvTxt.AcceptsReturn = true;
             this.tabColorsCsvTxt.TabIndex = this.tabColorsEditor.TabIndex;
             this.tabColorsCsvTxt.Font = new Font(family: FontFamily.GenericMonospace, emSize: this.Font.Size);
-            this.tabColorsCsvTxt.Size = tabColorsEditorSize;
+            this.tabColorsCsvTxt.Size = new Size(width: tabColorsEditorSize.Width, height: 1);
             this.tabColorsCsvTxt.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Bottom;
-            //            this.tabColorsCsvTxt.KeyPress += this.TabColorsCsvTxt_KeyPress;
+//          this.tabColorsCsvTxt.KeyPress += this.TabColorsCsvTxt_KeyPress; // <-- Doesn't work. VS intercepts the event first.
             this.tabColorsCsvTxt.TextChanged += this.TabColorsCsvTxt_TextChanged;
             this.layout.SetCellPosition(this.tabColorsCsvTxt, new TableLayoutPanelCellPosition(column: 1, row: _tabColorsEditorRowIdx));
 #endif
@@ -214,7 +214,6 @@ namespace VSIconizer
                 }
             }
         }
-#endif
 
         private void TabColorsEditor_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
@@ -239,6 +238,7 @@ namespace VSIconizer
                 }
             }
         }
+#endif
 
         #endregion
 
@@ -258,6 +258,8 @@ namespace VSIconizer
 
         private bool suppressUserChange;
 
+        private VSIconizerConfiguration lastNewCfg;
+
         private void OnUserChange(object _, EventArgs e)
         {
             if (this.suppressUserChange) return;
@@ -265,7 +267,12 @@ namespace VSIconizer
             UpdateTableLayout(this.layout, forMode: this.SelectedMode, useTabColors: this.useTabColorsChk.Checked);
 
             VSIconizerConfiguration newCfg = this.GetVSIconizerConfiguration();
-            this.parentPage.Apply(newCfg);
+
+            if (this.lastNewCfg is null || !this.lastNewCfg.Equals(newCfg))
+            {
+                this.lastNewCfg = newCfg;
+                this.parentPage.Apply(newCfg);
+            }
         }
 
         private static void UpdateTableLayout(TableLayoutPanel layout, VSIconizerMode forMode, bool useTabColors) // This method is static so we don't unintentionally access other controls directly.

@@ -6,10 +6,11 @@ using System.Text.RegularExpressions;
 
 namespace VSIconizer.Core
 {
+    using WpfColor  = System.Windows.Media.Color;
     using ColorDict = IReadOnlyDictionary<string,System.Windows.Media.Color>;
 
     /// <summary>Immutable.</summary>
-    public class VSIconizerConfiguration
+    public class VSIconizerConfiguration : IEquatable<VSIconizerConfiguration>
     {
         public static ColorDict EmptyTabColors => ImmutableEmptyDictionary<string,System.Windows.Media.Color>.Instance;
 
@@ -92,7 +93,88 @@ namespace VSIconizer.Core
             );
         }
 
-        
+
+        #region IEquatable
+
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as VSIconizerConfiguration);
+        }
+
+        public bool Equals(VSIconizerConfiguration other)
+        {
+            if (other is null) return false;
+
+            return
+
+                this.Mode                   == other.Mode                   &&
+                this.HorizontalSpacing      == other.HorizontalSpacing      &&
+                this.VerticalSpacing        == other.VerticalSpacing        &&
+                this.IconTextSpacing        == other.IconTextSpacing        &&
+                this.RotateVerticalTabIcons == other.RotateVerticalTabIcons &&
+                this.UseTabColors           == other.UseTabColors           &&
+                ColorDictsEqual(this.TabColors, other.TabColors);
+        }
+
+        public override int GetHashCode()
+        {
+            int hashCode = 276918386;
+            hashCode = hashCode * -1521134295 + this.Mode.GetHashCode();
+            hashCode = hashCode * -1521134295 + this.HorizontalSpacing.GetHashCode();
+            hashCode = hashCode * -1521134295 + this.VerticalSpacing.GetHashCode();
+            hashCode = hashCode * -1521134295 + this.IconTextSpacing.GetHashCode();
+            hashCode = hashCode * -1521134295 + this.RotateVerticalTabIcons.GetHashCode();
+            hashCode = hashCode * -1521134295 + this.UseTabColors.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<ColorDict>.Default.GetHashCode(this.TabColors);
+            return hashCode;
+        }
+
+        public static bool operator ==(VSIconizerConfiguration left, VSIconizerConfiguration right)
+        {
+            return EqualityComparer<VSIconizerConfiguration>.Default.Equals(left, right);
+        }
+
+        public static bool operator !=(VSIconizerConfiguration left, VSIconizerConfiguration right)
+        {
+            return !( left == right );
+        }
+
+        private static bool ColorDictsEqual(ColorDict x, ColorDict y)
+        {
+            if (x.Count != y.Count) return false;
+
+            // This double-checking is probably redundant...
+
+            foreach (string tabName in x.Keys)
+            {
+                WpfColor xColor = x[tabName];
+                if (y.TryGetValue(tabName, out WpfColor yColor))
+                {
+                    if (!xColor.Equals(yColor)) return false;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            foreach(string tabName in y.Keys)
+            {
+                WpfColor yColor = y[tabName];
+                if (x.TryGetValue(tabName, out WpfColor xColor))
+                {
+                    if (!yColor.Equals(xColor)) return false;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        #endregion
     }
 
     public enum VSIconizerMode
