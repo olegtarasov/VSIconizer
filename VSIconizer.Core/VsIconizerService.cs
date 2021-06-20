@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -15,6 +16,8 @@ using Window = System.Windows.Window;
 
 namespace VSIconizer.Core
 {
+    using WpfColor = System.Windows.Media.Color;
+
     public class VSIconizerService
     {
 //      private readonly DTE             dte;
@@ -29,10 +32,11 @@ namespace VSIconizer.Core
 
         // Mutable precomputed margins and values:
         private Thickness  gridMargin;
-        private Thickness? iconHorizontal;
-        private Thickness? iconVertical;
+        private Thickness? iconHorizontal; // When icons are rotated VS/WPF also handles rotating the margin, so no need for separate `Thickness` instances for vertical and horizontal.
         private Visibility iconVisibility;
         private Visibility textVisibility;
+
+        private readonly Dictionary<WpfColor,SolidColorBrush> brushes = new Dictionary<WpfColor,SolidColorBrush>();
 
         public VSIconizerService(
 //          DTE                     dte,
@@ -80,13 +84,25 @@ namespace VSIconizer.Core
 
             if (cfg.Mode == VSIconizerMode.IconAndText)
             {
-                this.iconHorizontal = new Thickness(left: 0, top: 0, right: cfg.IconTextSpacing, bottom:                   0);
-                this.iconVertical   = new Thickness(left: 0, top: 0, right:                   0, bottom: cfg.IconTextSpacing);
+                this.iconHorizontal = new Thickness(left: 0, top: 0, right: cfg.IconTextSpacing, bottom: 0);
             }
             else
             {
                 this.iconHorizontal = null;
-                this.iconVertical   = null;
+            }
+
+            if (cfg.UseTabColors)
+            {
+                foreach(WpfColor wpfColor in cfg.TabColors.Values)
+                {
+                    if(!this.brushes.ContainsKey(wpfColor))
+                    {
+                        SolidColorBrush scb = new SolidColorBrush(wpfColor);
+                        if (scb.CanFreeze) scb.Freeze();
+
+                        this.brushes.Add(wpfColor, scb);
+                    }
+                }
             }
 
             //
@@ -200,30 +216,35 @@ namespace VSIconizer.Core
                 textBlock.SetValue(Grid.ColumnProperty, 1);
             }
 
-            grid.Background = Brushes.Transparent;
-            grid.Margin     = this.gridMargin;
-            grid.ToolTip    = (this.textVisibility == Visibility.Visible) ? null : textBlock.Text;
-
-            icon     .Visibility = this.iconVisibility;
-            textBlock.Visibility = this.textVisibility;
-
-            icon.LayoutTransform = transform;
-
-            if(this.iconHorizontal.HasValue && this.iconVertical.HasValue)
+            // Grid:
             {
-                icon.Margin = this.iconHorizontal.Value;
-                /*
-                if (transform is null)
+                if (this.cfg.UseTabColors && this.cfg.TabColors.TryGetValue(textBlock.Text, out WpfColor tabColor) && this.brushes.TryGetValue(tabColor, out SolidColorBrush brush))
                 {
-                    // Horizontal orientation:
-                    icon.Margin = this.iconHorizontal.Value;
+                    if (grid.Background is null)
+                    {
+                        grid.Background = brush;
+                    }
                 }
                 else
                 {
-                    // Vertical orientation:
-                    icon.Margin = this.iconVertical.Value;
+                    grid.Background = Brushes.Transparent; // <-- why is this being done on every invocation?
                 }
-                */
+
+                grid.Margin  = this.gridMargin;
+                grid.ToolTip = (this.textVisibility == Visibility.Visible) ? null : textBlock.Text;
+            }
+
+            // Icon and Text:
+            {
+                icon     .Visibility = this.iconVisibility;
+                textBlock.Visibility = this.textVisibility;
+
+                icon.LayoutTransform = transform;
+
+                if(this.iconHorizontal.HasValue)
+                {
+                    icon.Margin = this.iconHorizontal.Value;
+                }
             }
         }
     }

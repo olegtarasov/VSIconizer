@@ -1,25 +1,39 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace VSIconizer.Core
 {
+    using ColorDict = IReadOnlyDictionary<string,System.Windows.Media.Color>;
+
     /// <summary>Immutable.</summary>
     public class VSIconizerConfiguration
     {
+        public static ColorDict EmptyTabColors => ImmutableEmptyDictionary<string,System.Windows.Media.Color>.Instance;
+
         public static VSIconizerConfiguration Default { get; } = new VSIconizerConfiguration(
             mode                  : VSIconizerMode.IconOnly,
             horizontalSpacing     : 10,
             verticalSpacing       : 5,
             iconTextSpacing       : 3,
-            rotateVerticalTabIcons: true
+            rotateVerticalTabIcons: true,
+            useTabColors          : false,
+            tabColors             : EmptyTabColors
         );
 
-        public VSIconizerConfiguration(VSIconizerMode mode, double horizontalSpacing, double verticalSpacing, double iconTextSpacing, bool rotateVerticalTabIcons)
+        private static readonly Dictionary<string,string> _emptyDict = new Dictionary<string,string>();
+
+        public VSIconizerConfiguration(VSIconizerMode mode, double horizontalSpacing, double verticalSpacing, double iconTextSpacing, bool rotateVerticalTabIcons, bool useTabColors, ColorDict tabColors)
         {
             this.Mode                   = mode;
             this.HorizontalSpacing      = horizontalSpacing;
             this.VerticalSpacing        = verticalSpacing;
             this.IconTextSpacing        = iconTextSpacing;
             this.RotateVerticalTabIcons = rotateVerticalTabIcons;
+            this.UseTabColors           = useTabColors;
+            this.TabColors              = tabColors ?? EmptyTabColors;
         }
 
         public VSIconizerMode Mode { get; }
@@ -46,6 +60,15 @@ namespace VSIconizer.Core
 
         public bool RotateVerticalTabIcons { get; }
 
+        public bool UseTabColors { get; }
+
+        /// <summary>Never null. Can be empty.<br />
+        /// The key is the text of the tool window tab. I would like to use some internal/invariant identifier but I don't know how to get it.<br />
+        /// The value is a string convertible to a <c>System.Windows.Media.Color</c>, e.g. hexadecimal ARGB.<br />
+        /// These entries only have an effect when <see cref="UseTabColors"/> is <see langword="true"/>.
+        /// </summary>
+        public ColorDict TabColors { get; }
+
         //
 
         public VSIconizerConfiguration With(
@@ -53,7 +76,9 @@ namespace VSIconizer.Core
             double?         horizontalSpacing,
             double?         verticalSpacing,
             double?         iconTextSpacing,
-            bool?           rotateVerticalTabIcons
+            bool?           rotateVerticalTabIcons,
+            bool?           useTabColors,
+            ColorDict       tabColors
         )
         {
             return new VSIconizerConfiguration(
@@ -61,9 +86,13 @@ namespace VSIconizer.Core
                 horizontalSpacing     : horizontalSpacing      ?? this.HorizontalSpacing,
                 verticalSpacing       : verticalSpacing        ?? this.VerticalSpacing,
                 iconTextSpacing       : iconTextSpacing        ?? this.IconTextSpacing,
-                rotateVerticalTabIcons: rotateVerticalTabIcons ?? this.RotateVerticalTabIcons
+                rotateVerticalTabIcons: rotateVerticalTabIcons ?? this.RotateVerticalTabIcons,
+                useTabColors          : useTabColors           ?? this.UseTabColors,
+                tabColors             : tabColors              ?? this.TabColors
             );
         }
+
+        
     }
 
     public enum VSIconizerMode

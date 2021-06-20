@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Helper.cs" />
+    <Compile Include="ImmutableEmptyDictionary.cs" />
     <Compile Include="IVSControlMethods.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="ReflectedVSControlMethods.cs" />

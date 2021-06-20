@@ -9,7 +9,7 @@ using VSIconizer.Core;
 namespace VSIconizer
 {
     [Guid("7758E0A8-93E9-4D2C-9553-8B5262604D88")]
-    public class IconizerOptionPage : DialogPage
+    public class IconizerOptionPage : DialogPage, IIconizerOptionPage
     {
         private readonly IconizerOptionsControl control = new IconizerOptionsControl();
 
@@ -17,11 +17,15 @@ namespace VSIconizer
         // These properties are loaded/saved by VS.
         // See https://docs.microsoft.com/en-us/visualstudio/extensibility/creating-an-options-page?view=vs-2019
 
-        public string Mode              { get; set; }
+        // These are saved by `DialogPage.SaveSetting` and `LoadSettingFromStorage`.
+
+        public string Mode { get; set; }
         public double HorizontalSpacing { get; set; }
-        public double VerticalSpacing   { get; set; }
-        public double IconTextSpacing   { get; set; }
-        public bool   RotateIcons       { get; set; }
+        public double VerticalSpacing { get; set; }
+        public double IconTextSpacing { get; set; }
+        public bool RotateIcons { get; set; }
+        public bool UseTabColors { get; set; }
+        public string TabColorsCsv { get; set; } // CSV serialization of the TabColorsDict.
 
         #endregion
 
@@ -33,7 +37,7 @@ namespace VSIconizer
         {
             this.newestConfiguration = newConfiguration ?? throw new ArgumentNullException(nameof(newConfiguration));
 
-            this.OnApply(new PageApplyEventArgs{ ApplyBehavior = ApplyKind.Apply });
+            this.OnApply(new PageApplyEventArgs { ApplyBehavior = ApplyKind.Apply });
         }
 
         /// <summary>Saves current settings from <see cref="control"/> to the VS profile/registry.</summary>
@@ -46,7 +50,7 @@ namespace VSIconizer
 
             if (e.ApplyBehavior == ApplyKind.Apply)
             {
-//              VSIconizerConfiguration desired = this.control.ToVSIconizerConfiguration();
+                //              VSIconizerConfiguration desired = this.control.ToVSIconizerConfiguration();
                 VSIconizerConfiguration desired = this.newestConfiguration;
 
                 this.Mode              = desired.Mode.ToString();
@@ -54,6 +58,7 @@ namespace VSIconizer
                 this.VerticalSpacing   = desired.VerticalSpacing;
                 this.IconTextSpacing   = desired.IconTextSpacing;
                 this.RotateIcons       = desired.RotateVerticalTabIcons;
+                this.TabColorsCsv      = TabColorsSerialization.SerializeTabColorsToCsv(desired.TabColors);
 
                 this.OnOptionsUpdated(desired);
             }
@@ -88,10 +93,12 @@ namespace VSIconizer
         {
             bool isDefault = (
                 String.IsNullOrWhiteSpace(this.Mode) &&
-                this.HorizontalSpacing == default    &&
-                this.VerticalSpacing   == default    &&
-                this.IconTextSpacing   == default    &&
-                this.RotateIcons       == default
+                this.HorizontalSpacing == default    && // 0
+                this.VerticalSpacing   == default    && // 0
+                this.IconTextSpacing   == default    && // 0
+                this.RotateIcons       == default    && // false
+                this.UseTabColors      == default    && // false
+                String.IsNullOrWhiteSpace(this.TabColorsCsv)
             );
 
             if (isDefault)
@@ -101,11 +108,13 @@ namespace VSIconizer
             else
             {
                 return new VSIconizerConfiguration(
-                    mode                  : Enum.TryParse(this.Mode, ignoreCase: true, out VSIconizerMode mode) ? mode : VSIconizerMode.IconOnly,
-                    horizontalSpacing     : this.HorizontalSpacing,
-                    verticalSpacing       : this.VerticalSpacing,
-                    iconTextSpacing       : this.IconTextSpacing,
-                    rotateVerticalTabIcons: this.RotateIcons
+                    mode: Enum.TryParse(this.Mode, ignoreCase: true, out VSIconizerMode mode) ? mode : VSIconizerMode.IconOnly,
+                    horizontalSpacing: this.HorizontalSpacing,
+                    verticalSpacing: this.VerticalSpacing,
+                    iconTextSpacing: this.IconTextSpacing,
+                    rotateVerticalTabIcons: this.RotateIcons,
+                    useTabColors: this.UseTabColors,
+                    tabColors: TabColorsSerialization.ReadTabColorsCsv(this.TabColorsCsv)
                 );
             }
         }
