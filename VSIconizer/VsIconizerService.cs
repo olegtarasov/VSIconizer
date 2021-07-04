@@ -9,10 +9,9 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using EnvDTE;
 using Window = System.Windows.Window;
 
-namespace VsIconizer.Core
+namespace VSIconizer
 {
     public class VsIconizerService
     {
@@ -27,9 +26,6 @@ namespace VsIconizer.Core
         private static readonly Type _imageType = typeof(Image);
         private static readonly Type _textBlock = typeof(TextBlock);
 
-
-        private readonly DTE _dte;
-        private DTEEvents _events;
         private Timer _timer = null;
         private uint _threadId;
         private Dispatcher _dispatcher;
@@ -41,7 +37,7 @@ namespace VsIconizer.Core
         public Thickness IconMargin { get; set; }
         public bool ShowText { get; set; }
 
-        public VsIconizerService(DTE dte, Func<DependencyObject, bool> isAutohideControl, Func<DependencyObject, bool> isDragUnlockHeader, Thickness margin, bool showText)
+        public VsIconizerService(Func<DependencyObject, bool> isAutohideControl, Func<DependencyObject, bool> isDragUnlockHeader, Thickness margin, bool showText)
         {
             _isAutohideControl = isAutohideControl;
             _isDragUnlockHeader = isDragUnlockHeader;
@@ -52,21 +48,10 @@ namespace VsIconizer.Core
             var type = ass.GetType("Microsoft.VisualStudio.PlatformUI.Shell.Controls.AutoHideChannelControl");
             _getOrientation = type.GetMethod("GetOrientation", BindingFlags.Static | BindingFlags.Public);
 
-            _dte = dte;
-            _events = _dte.Events.DTEEvents;
-
-            //_events.OnStartupComplete += () =>
-            //{
             _threadId = GetCurrentThreadId();
             _dispatcher = Dispatcher.CurrentDispatcher;
             _timer = new Timer(TimerCallback, null, 2000, 2000);
             ShowText = showText;
-            //};
-
-            //_events.OnBeginShutdown += () =>
-            //{
-
-            //};
         }
 
         public void Shutdown()
