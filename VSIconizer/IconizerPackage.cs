@@ -17,7 +17,7 @@ namespace VSIconizer
     [ProvideOptionPage(typeof(IconizerOptionPage), "Environment", "Iconizer", 0, 0, true)]
     public sealed class IconizerPackage : AsyncPackage
     {
-        public const string PackageGuidString = "376102e5-d394-4f6b-b994-145fa911c278";
+        public const string PackageGuidString = "4F193BD4-B46A-4268-9DFC-3247EB49651B";
 
         private VsIconizerService _iconizerService;
 
