@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="4F193BD4-B46A-4268-9DFC-3247EB49651B" Version="1.25" Language="en-US" Publisher="Oleg Tarasov" />
+        <Identity Id="4F193BD4-B46A-4268-9DFC-3247EB49651B" Version="1.26" Language="en-US" Publisher="Oleg Tarasov" />
         <DisplayName>Visual Studio Iconizer for Visual Studio 2022</DisplayName>
         <Description xml:space="preserve">This extension converts text titles on Visual Studio tool windows to icons.</Description>
         <Icon>Resources\icon.jpg</Icon>
@@ -9,7 +9,7 @@
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">
-          <ProductArchitecture>amd64</ProductArchitecture>
+            <ProductArchitecture>amd64</ProductArchitecture>
         </InstallationTarget>
     </Installation>
     <Dependencies>

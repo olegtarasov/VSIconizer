@@ -26,6 +26,8 @@ namespace VSIconizer
         private static readonly Type _imageType = typeof(Image);
         private static readonly Type _textBlock = typeof(TextBlock);
 
+        private const uint TimerInterval = 2000;
+
         private Timer _timer = null;
         private uint _threadId;
         private Dispatcher _dispatcher;
@@ -50,7 +52,7 @@ namespace VSIconizer
 
             _threadId = GetCurrentThreadId();
             _dispatcher = Dispatcher.CurrentDispatcher;
-            _timer = new Timer(TimerCallback, null, 2000, 2000);
+            _timer = new Timer(TimerCallback, null, TimerInterval, Timeout.Infinite);
             ShowText = showText;
         }
 
@@ -65,6 +67,15 @@ namespace VSIconizer
             if (_timer != null)
             {
                 EnumThreadWindows(_threadId, EnumCallback, IntPtr.Zero);
+            }
+
+            if (_timer != null)
+            {
+                try
+                {
+                    _timer.Change(TimerInterval, Timeout.Infinite);
+                }
+                catch { }
             }
         }
 
